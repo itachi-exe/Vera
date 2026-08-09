@@ -156,22 +156,34 @@ wallet and one that genuinely holds no A-Pass. These are also the exact numbers
 
 | | Verified | Anonymous |
 |---|---|---|
-| Trust score | 739 | 535 |
-| Identity (CVI) | 204 / 300 | 0 / 300 |
-| LTV | 71% | 45% (anon cap) |
-| Liquidation threshold | 79% | 53% |
-| Borrow APR | 5.7% | 7.0% |
-| Max borrow (3 mETH) | 6,390 mUSDC | 4,050 mUSDC |
+| Trust score | 753 | 535 |
+| Identity (CVI) | 218 / 300 | 0 / 300 |
+| LTV | 72% | 45% (anon cap) |
+| Liquidation threshold | 80% | 53% |
+| Borrow APR | 5.6% | 7.0% |
+| Max borrow (3 mETH) | 6,480 mUSDC | 4,050 mUSDC |
 | Borrow CTA | priced | "Blocked by compliance", disabled |
 
-Score inputs are identity 681 (measured on the sandbox A-Pass), history 800,
-repayment 700. History and repayment are defined once in `historyInputs()`
-(`vera-frontend/lib/cleanverse.js`) and mirrored by the demo script's constants; identity
-is not a constant on the web side at all — it is computed from the live A-Pass
-by `identityScoreFrom()`, and 681 is what that returns for the sandbox record.
-They were briefly out of sync (the UI used 700/848) and were unified on
-2026-08-07. `Demo.s.sol` held 680 until 2026-08-08; both weight to 204/300 and
-score 739, which is why it read correctly on screen while being the wrong number.
+Score inputs are identity **726** (measured on the sandbox A-Pass, 2026-08-09),
+history 800, repayment 700. History and repayment are defined once in
+`historyInputs()` (`vera-frontend/lib/cleanverse.js`) and mirrored by the demo
+script's constants; identity is not a constant on the web side at all — it is
+computed from the live A-Pass by `identityScoreFrom()`.
+
+**These numbers move when Cleanverse re-issues the A-Pass, and they have.** The
+record was tier 20 / subTier 1 / group `oc`, scoring 681 and weighting to a trust
+score of 739. On 2026-08-09 the sandbox served tier 50 / subTier 9 / group `""`
+for the same wallet: identity 726, trust 753. Nothing in Vera changed — the
+attestation did. Three e2e suites hardcoded 739 and failed on their schedule
+rather than on a Vera regression, so they now derive the expectation from
+`/api/cvi` at run time (`vera-frontend/scripts/expected-score.mjs`). The unit
+fixture in `apass.test.js` is still a literal on purpose: it pins the arithmetic,
+so a change there should be a deliberate re-capture and never a silent drift.
+
+`Demo.s.sol` still holds identity 680 as a Solidity constant. It weights to
+204/300 and scores 739, so the on-chain demo currently prices one notch below
+what the UI quotes — the pool is not wrong, it is being told a stale identity.
+That constant needs lifting to 726 when the contracts land.
 
 Unit suite `vera-frontend/lib/apass.test.js` — 17/17, fixtures captured from the sandbox.
 
@@ -220,7 +232,9 @@ is a real determination and still reads Blocked. Note that `unscreened` is itsel
 a determination — "no A-Pass exists" — so it is not the empty state.
 `vera-frontend/scripts/e2e-cva-degraded.mjs` proves it under the exact failure it exists
 for: with `/api/cva` forced to 502 the chip reads Unknown, the attestation is
-still honoured at 739 / 71% / 5.7%, and the draw is still refused.
+still honoured at the live score (753 / 72% / 5.6% against the current record),
+and the draw is still refused. Those three figures are derived from `/api/cvi` at
+run time, not written into the suite.
 
 ## Wallet choice, not a coin flip — 2026-08-08
 

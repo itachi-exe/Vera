@@ -19,16 +19,22 @@ import {
   RESTRICTED_COUNTRIES,
 } from "./apass.js";
 
-/** Real sandbox record: 0x5702b24116718DCF49314231222A33403e88Aff8 on monad. */
+/**
+ * Real sandbox record for 0x5702b24116718DCF49314231222A33403e88Aff8 on monad,
+ * captured 2026-08-09. Cleanverse re-issues these: the previous capture had
+ * tier 20 / subTier 1 / group "oc" and scored 681. Re-capture when it moves —
+ * the point of this fixture is that the scoring maths is pinned, so a change
+ * here should be a deliberate edit and never a silent drift.
+ */
 const LIVE = {
-  subTier: 1,
-  tier: "20",
-  expirationTime: 1813133827, // 2027-06-17
-  subGroup: "AB",
-  cvRecordId: null,
-  countries: [],
-  currentKycHash: "0x3b4444a7a9a58be8bcc09d594002fafbef623fadda4d877fc8091c702964239e",
-  group: "oc",
+  subTier: 9,
+  tier: "50",
+  expirationTime: 1817749017, // 2027-08-07
+  subGroup: "CD",
+  cvRecordId: "339",
+  countries: ["US"],
+  currentKycHash: "0x0e3819435569f8595d8a7928f0884cea1ba66621d4ad81c997e190d722778cd3",
+  group: "",
   status: 1,
 };
 
@@ -40,8 +46,8 @@ test("no attestation scores zero", () => {
 });
 
 test("live sandbox record scores from its real fields", () => {
-  // 550 base + 250*0.20 + 120*0.01 + 40 (group) + 40 (subGroup) = 681
-  assert.equal(identityScoreFrom(LIVE, NOW), 681);
+  // 550 base + 250*0.50 + 120*0.09 + 0 (group empty) + 40 (subGroup) = 725.8 -> 726
+  assert.equal(identityScoreFrom(LIVE, NOW), 726);
 });
 
 test("a frozen A-Pass scores zero however good its tier", () => {
@@ -65,10 +71,13 @@ test("score is bounded at 1000 and never negative", () => {
 });
 
 test("non-numeric tier degrades instead of producing NaN", () => {
-  const weird = { ...LIVE, tier: "premium", subTier: null };
+  // group/subGroup are set explicitly rather than inherited from LIVE: this test
+  // is about tier parsing, and spreading the fixture made the expected total
+  // move when Cleanverse blanked the group on their side.
+  const weird = { ...LIVE, tier: "premium", subTier: null, group: "oc", subGroup: "AB" };
   const s = identityScoreFrom(weird, NOW);
   assert.ok(Number.isFinite(s), "score must be finite");
-  assert.equal(s, 630); // base + group + subGroup only
+  assert.equal(s, 630); // 550 base + 40 group + 40 subGroup, both tiers ignored
 });
 
 test("higher tier always scores at least as high", () => {

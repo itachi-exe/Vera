@@ -10,15 +10,23 @@
  * by design.
  */
 import { loadPlaywright } from "./playwright.mjs";
+import { expectedScore } from "./expected-score.mjs";
 
 const { chromium } = await loadPlaywright();
 
 const URL = process.env.VERA_URL || 'http://localhost:3000';
 const ATTESTED = '0x5702b24116718DCF49314231222A33403e88Aff8';
 
+// Read the live score BEFORE /api/cva is broken, so the expectation reflects the
+// same A-Pass the page will render from cache.
+const LIVE = await expectedScore(URL, ATTESTED);
+const EXPECTED = LIVE.verified;
+
 const browser = await chromium.launch();
 const page = await browser.newPage();
 let failures = 0;
+// Rates carry a decimal, which is a regex metacharacter — 5.6 must not match 596.
+const esc = (n) => String(n).replace(/\./g, "\\.");
 const check = (label, got, want) => {
   const ok = got === want;
   if (!ok) failures++;
@@ -66,7 +74,7 @@ check('does not accuse the wallet', /Blocked/.test(chip.text), false);
 check('names the real status', /check-failed/.test(chip.text), true);
 
 const body = await page.evaluate(() => document.body.innerText);
-check('attestation still honoured', /№\s*739/.test(body), true);
+check('attestation still honoured', new RegExp(`№\\s*${EXPECTED}`).test(body), true);
 
 // Assert on the draw CTA, which quotes the terms this wallet is actually being
 // offered. Do NOT scan the whole page: ScoreSimulator has a "Without an
@@ -76,11 +84,12 @@ const cta = await page.evaluate(
   () => [...document.querySelectorAll('button')].find((b) => /Draw against your score/i.test(b.innerText))?.innerText ?? ''
 );
 console.log(`  cta: ${cta.replace(/\n/g, ' ')}`);
-check('quotes attested LTV', /71%\s*LTV/.test(cta), true);
-check('quotes attested APR', /5\.7%\s*APR/.test(cta), true);
+check('quotes attested LTV', new RegExp(`${LIVE.ltv}%\\s*LTV`).test(cta), true);
+check('quotes attested APR', new RegExp(`${esc(LIVE.apr)}%\\s*APR`).test(cta), true);
 // Boundaries matter here: a bare /7% APR/ also matches inside "5.7% APR",
 // which is the attested rate — the assertion would fail on correct output.
-check('not re-priced as anonymous', /(?<![\d.])45%\s*LTV|(?<![\d.])7%\s*APR/.test(cta), false);
+const anon = new RegExp(`(?<![\\d.])${LIVE.anonLtv}%\\s*LTV|(?<![\\d.])${esc(LIVE.anonApr)}%\\s*APR`);
+check('not re-priced as anonymous', anon.test(cta), false);
 
 console.log('\n=== THE DRAW MUST STILL BE REFUSED (fail closed) ===');
 await page.getByRole('button', { name: /Draw against your score/i }).first().click();

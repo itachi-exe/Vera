@@ -15,6 +15,7 @@
  */
 
 import { loadPlaywright } from "./playwright.mjs";
+import { expectedScore } from "./expected-score.mjs";
 
 const { chromium } = await loadPlaywright();
 
@@ -24,6 +25,10 @@ const MONAD = '0x279f'; // 10143
 const ETH_MAINNET = '0x1';
 // The two sandbox wallets, used here as the addresses a wallet would return.
 const ATTESTED = '0x5702b24116718DCF49314231222A33403e88Aff8';
+
+const exp = await expectedScore(BASE, ATTESTED);
+const EXPECTED = exp.verified;
+const EXPECTED_ANON = exp.anonymous;
 const ANON = '0xdEaD00000000000000000000000000000000bEEf';
 
 const fail = [];
@@ -152,9 +157,11 @@ console.log('\n=== CONNECTED ON MONAD ===');
     timeout: 30000,
   });
   const t = await text(page);
-  // 739 is computed from the live A-Pass for THIS address — proof the lookup
+  // The expected value is derived from the live A-Pass for THIS address, not a
+  // literal — Cleanverse re-issues records, so a constant here breaks on their
+  // schedule rather than on a Vera regression. Still proof the lookup
   // follows the connected wallet rather than the demo toggle.
-  check('scores the connected wallet', t.match(/№(\d+)/)?.[1], 739);
+  check('scores the connected wallet', Number(t.match(/№(\d+)/)?.[1]), EXPECTED);
   check('demo toggle is gone in live mode', /Use demo wallets/.test(t), true);
 
   // ── 5. The user swaps accounts in MetaMask ───────────────────────────────
@@ -164,7 +171,7 @@ console.log('\n=== CONNECTED ON MONAD ===');
     timeout: 30000,
   });
   const t2 = await text(page);
-  check('re-scores without a reload', t2.match(/№(\d+)/)?.[1], 535);
+  check('re-scores without a reload', Number(t2.match(/№(\d+)/)?.[1]), EXPECTED_ANON);
   check('header follows the new wallet', await page.locator('.wallet').innerText(), '0xdEaD…bEEf');
   await page.close();
 }

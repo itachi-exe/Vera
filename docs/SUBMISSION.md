@@ -41,12 +41,12 @@ and history, one attested and one not, then reads the pool state back with
 
 | | Verified | Anonymous |
 |---|---|---|
-| Trust score | 739 | 535 |
-| Identity (CVI) | 204 / 300 | 0 / 300 |
-| LTV | 71% | 45% (anon cap) |
-| Liquidation threshold | 79% | 53% |
-| Borrow APR | 5.7% | 7.0% |
-| Max borrow (3 mETH) | 6,390 mUSDC | 4,050 mUSDC |
+| Trust score | 753 | 535 |
+| Identity (CVI) | 218 / 300 | 0 / 300 |
+| LTV | 72% | 45% (anon cap) |
+| Liquidation threshold | 80% | 53% |
+| Borrow APR | 5.6% | 7.0% |
+| Max borrow (3 mETH) | 6,480 mUSDC | 4,050 mUSDC |
 
 These are the same numbers the UI quotes, verified end to end against the live
 sandbox by `vera-frontend/scripts/e2e-cvi-cva.mjs` — one real attested wallet, and one
@@ -59,8 +59,10 @@ docs.cleanverse.com. None were guessed.
 
 **CVI — identity, 30% of the trust score.** `vera-frontend/app/api/cvi/route.js` calls
 `POST /query_apass`. `identityScoreFrom()` derives an identity score from the
-live A-Pass — tier, sub-tier, freshness — and `apass.js` weights it to 204/300
-for the sandbox record. A frozen or expired A-Pass scores **zero** regardless of
+live A-Pass — tier, sub-tier, freshness — and `apass.js` weights it to 218/300
+for the sandbox record as issued on 2026-08-09. That figure tracks the
+attestation, not our code: Cleanverse re-issues these records, and when they do
+the score moves without anything here changing. A frozen or expired A-Pass scores **zero** regardless of
 tier. "No A-Pass" arrives as business code `0002` and maps to
 `verified: false, score: 0` on a 200 — it is a state, not an error, and it is
 half the demo.

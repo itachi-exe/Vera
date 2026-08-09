@@ -171,6 +171,9 @@ test("known contract errors read as sentences and unknown ones pass through", ()
 
 /* ---------- the demo claim still holds end to end ---------- */
 
+// Identity 680 is a fixed input, not the live sandbox value — this test pins the
+// arithmetic, so it must not move when Cleanverse re-issues an A-Pass. The live
+// number is asserted by scripts/e2e-cvi-cva.mjs, which derives it from the API.
 test("the two demo wallets still price apart exactly as documented", () => {
   const base = { identity: 680, history: 800, repayment: 700 };
 

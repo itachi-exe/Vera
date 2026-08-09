@@ -7,6 +7,7 @@
  * at run time by scripts/playwright.mjs.
  */
 import { loadPlaywright } from "./playwright.mjs";
+import { expectedScore } from "./expected-score.mjs";
 
 const { chromium } = await loadPlaywright();
 
@@ -52,13 +53,21 @@ async function read() {
   };
 }
 
+// Derived from the A-Pass the sandbox serves right now — see expected-score.mjs
+// for why this is not a literal.
+const exp = await expectedScore(BASE);
+const EXPECTED = exp.verified;
+const EXPECTED_ID = exp.identityPoints;
+const EXPECTED_ANON = exp.anonymous;
+
+console.log(`\n  live A-Pass identity ${exp.identity} -> expected trust ${EXPECTED}`);
+
 console.log('\n=== VERIFIED WALLET (holds a real A-Pass on Monad) ===');
 await page.waitForFunction(() => document.body.innerText.includes('Verified wallet'), { timeout: 30000 });
 let s = await read();
 check('attestation recognised', s.verified, true);
-// 0.3*680 + 0.45*800 + 0.25*700 = 204 + 360 + 175 = 739
-check('trust score', s.score, 739);
-check('identity component', s.identity, 204);
+check('trust score', Number(s.score), EXPECTED);
+check('identity component', Number(s.identity), EXPECTED_ID);
 check('CVI reference shown', s.hasRef, true);
 
 console.log('\n=== ANONYMOUS WALLET (genuinely has no A-Pass) ===');
@@ -66,9 +75,9 @@ await page.getByRole('button', { name: /anonymous|unverified/i }).first().click(
 await page.waitForFunction(() => document.body.innerText.includes('Unverified wallet'), { timeout: 30000 });
 s = await read();
 check('attestation absent', s.verified, false);
-// Same inputs, identity zeroed: 360 + 175 = 535
-check('trust score', s.score, 535);
-check('identity component zeroed', s.identity, 0);
+// Same inputs, identity zeroed by the absence of an attestation.
+check('trust score', Number(s.score), EXPECTED_ANON);
+check('identity component zeroed', Number(s.identity), 0);
 
 console.log('\n=== CVA GATE ON THE BORROW PATH ===');
 await page.getByRole('button', { name: /^home$/i }).first().click();
