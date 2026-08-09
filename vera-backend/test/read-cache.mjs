@@ -21,9 +21,15 @@
 process.env.CLEANVERSE_API_ID = "test-api-id";
 process.env.CLEANVERSE_API_KEY = Buffer.alloc(32, 7).toString("base64");
 
-const { queryApass, verifyCompliance, resetReadCache } = await import(
-  "../src/cleanverse.js"
-);
+import crypto from "node:crypto";
+
+const {
+  queryApass,
+  verifyCompliance,
+  resetReadCache,
+  invalidateAddress,
+  verifyWebhookSignature,
+} = await import("../src/cleanverse.js");
 
 let failed = 0;
 function check(label, actual, expected) {
@@ -155,6 +161,70 @@ const u1 = await verifyCompliance("0x1111111111111111111111111111111111111111", 
 const u2 = await verifyCompliance("0x2222222222222222222222222222222222222222", POOL);
 check("same pool, different user is a different read", calls, 2);
 check("and each gets its own verdict", `${u1.valid}/${u2.valid}`, "true/false");
+
+/*
+ * Targeted invalidation is what makes the 60s TTL defensible: without it, a
+ * wallet frozen upstream keeps its cached `status: 1` for the rest of the
+ * minute. These checks pin the two things that could quietly break — that it
+ * matches the address regardless of case, and that it does not take out
+ * unrelated wallets while doing so.
+ */
+console.log("\n=== A WEBHOOK CAN FORGET ONE WALLET ===");
+reset([
+  { code: "0000", message: "ok", data: { cvRecordId: "cv-1", tier: 2, status: 1 } },
+  { code: "0000", message: "ok", data: { valid: true } },
+  { code: "0000", message: "ok", data: { cvRecordId: "cv-1", tier: 2, status: 2 } },
+]);
+await queryApass(ADDR);
+await verifyCompliance(ADDR, POOL);
+check("two reads cached", calls, 2);
+
+// Checksummed on the way in, lowercase in the keys — the mismatch that would
+// make this silently drop nothing.
+const dropped = invalidateAddress(ADDR.toUpperCase().replace("0X", "0x"));
+check("both entries dropped", dropped, 2);
+
+const refetched = await queryApass(ADDR);
+check("next read goes upstream", calls, 3);
+check("and sees the freeze", refetched.status, 2);
+
+console.log("\n=== INVALIDATION DOES NOT SPILL ONTO OTHER WALLETS ===");
+reset([
+  { code: "0000", message: "ok", data: { cvRecordId: "a", status: 1 } },
+  { code: "0000", message: "ok", data: { cvRecordId: "b", status: 1 } },
+]);
+const OTHER = "0x3333333333333333333333333333333333333333";
+await queryApass(ADDR);
+await queryApass(OTHER);
+check("two wallets cached", calls, 2);
+check("only the named wallet is dropped", invalidateAddress(ADDR), 1);
+await queryApass(OTHER);
+check("the other is still served from cache", calls, 2);
+
+/*
+ * The webhook route refuses anything it cannot authenticate. Verified here
+ * rather than through the route so the property is pinned at the function the
+ * route delegates to — the route's own job is just handing it the raw bytes.
+ */
+console.log("\n=== AN UNSIGNED OR FORGED WEBHOOK IS REFUSED ===");
+const body = JSON.stringify({ address: ADDR, status: 2 });
+const good = crypto
+  .createHmac("sha256", Buffer.from(process.env.CLEANVERSE_API_KEY, "base64"))
+  .update(body, "utf8")
+  .digest("hex");
+
+check("a correct signature verifies", verifyWebhookSignature(body, good), true);
+check("uppercase hex still verifies", verifyWebhookSignature(body, good.toUpperCase()), true);
+check("a missing signature is refused", verifyWebhookSignature(body, null), false);
+check("a wrong signature is refused", verifyWebhookSignature(body, "0".repeat(64)), false);
+check("a truncated signature is refused", verifyWebhookSignature(body, good.slice(0, 32)), false);
+// The digest covers the bytes, so a payload edited in flight no longer matches
+// the signature that was sent with it.
+check(
+  "a tampered body is refused",
+  verifyWebhookSignature(JSON.stringify({ address: OTHER, status: 2 }), good),
+  false
+);
 
 console.log(failed === 0 ? "\nALL CHECKS PASSED" : `\n${failed} CHECK(S) FAILED`);
 process.exit(failed === 0 ? 0 : 1);

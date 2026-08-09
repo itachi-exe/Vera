@@ -7,7 +7,7 @@ Cleanverse API keys, and the only code that talks to Cleanverse.
 vera-backend/
 ├─ src/
 │  ├─ cleanverse.js    the API client: AES-256-CBC bodies, retries, read cache,
-│  │                   webhook signature verification
+│  │                   targeted invalidation, webhook signature verification
 │  └─ rate-limit.js    per-client throttle on the routes that spend quota
 └─ test/
    └─ read-cache.mjs   22 checks against a stubbed upstream with a call counter
@@ -69,4 +69,12 @@ counting upstream calls rather than by timing:
   fail-closed compliance gate opening on error, which is the one thing it must
   not do
 
-Mutation-checked: deleting the `cacheable` predicate makes it fail.
+It also covers the seam the webhook route depends on: `invalidateAddress()`
+drops every entry for one wallet regardless of address case, without touching
+other wallets, and `verifyWebhookSignature()` refuses unsigned, wrong-length and
+tampered payloads.
+
+Mutation-checked, because a check that has never failed is decoration. Deleting
+the `cacheable` predicate makes it fail; so does narrowing `invalidateAddress`
+from a suffix match to an exact one (4 checks), or dropping the length guard
+before `timingSafeEqual` (a `RangeError` on the truncated-signature case).

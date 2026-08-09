@@ -307,6 +307,33 @@ export function resetReadCache() {
   reads.clear();
 }
 
+/**
+ * Forget everything cached about one wallet, across every chain and pool.
+ *
+ * This is the other half of the TTL tradeoff documented above. A freeze upstream
+ * would otherwise take up to a minute to be reflected here, because `status`
+ * lives inside the cached record. When Cleanverse tells us a record changed, we
+ * do not have to wait out the minute.
+ *
+ * Matching is by suffix rather than by exact key: an address appears at the end
+ * of an A-Pass key and at the end of a validator key that also carries a pool
+ * address, and a status change invalidates both. Lowercased on both sides —
+ * webhooks arrive checksummed and cache keys are not.
+ *
+ * @returns {number} how many entries were dropped
+ */
+export function invalidateAddress(address) {
+  const needle = `:${String(address).toLowerCase()}`;
+  let dropped = 0;
+  for (const key of reads.keys()) {
+    if (key.endsWith(needle)) {
+      reads.delete(key);
+      dropped += 1;
+    }
+  }
+  return dropped;
+}
+
 /* ------------------------------------------------------------------ *
  *  CVI — A-Pass identity
  * ------------------------------------------------------------------ */

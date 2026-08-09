@@ -237,6 +237,18 @@ call counter, so "served from cache" is proven by the absence of a request rathe
 than inferred from a timing. Mutation-checked: removing the `cacheable` predicate
 makes it fail.
 
+**A freeze does not wait out the TTL** (`app/api/webhooks/cleanverse/route.js`).
+`status` lives inside the cached record, so a wallet frozen upstream would keep
+its cached `status: 1` for the rest of the minute. The signed A-Pass webhook
+calls `invalidateAddress()`, which drops every entry for that wallet — the A-Pass
+read and any validator read, across chains and pools — so the next lookup goes
+upstream. The endpoint only ever *forgets*: it cannot raise a score or clear a
+wallet, so the worst a forged call achieves is a re-fetch. It is still
+authenticated — HMAC-SHA256 over the raw bytes, compared in constant time,
+rejecting unsigned, wrong-length and tampered payloads with a 401. Verified
+against the running server: a genuine signature drops the record, forged and
+unsigned calls get 401.
+
 **"Could not check" is not "you failed the check"** (`VeraTab.jsx`). The CVA chip
 previously rendered anything that was not `cleared` as **Blocked**, so an upstream
 stall accused a compliant wallet of failing compliance. Only `check-failed` and
@@ -266,7 +278,7 @@ single-`window.ethereum` path is still covered by `e2e-wallet.mjs`, 19/19.
 
 | Command | Covers |
 |---|---|
-| `npm test` | 37 unit tests + 22 read-cache checks |
+| `npm test` | 37 unit tests + 35 backend cache/webhook checks |
 | `npm run e2e` | live CVI/CVA, wallet states, degraded CVA, EIP-6963, accessibility |
 
 `scripts/a11y-app.mjs` audits the connected screen for WCAG AA contrast, missing
