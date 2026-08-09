@@ -1,7 +1,7 @@
 /**
  * Wallet connection and contract interaction for the live Vera pool.
  *
- * When deployed, the pool address comes from `contracts/deployments/<chainid>.json`.
+ * When deployed, the pool address comes from `vera-contracts/deployments/<chainid>.json`.
  * Until then the frontend reads from the demo state in useVera.js.
  */
 

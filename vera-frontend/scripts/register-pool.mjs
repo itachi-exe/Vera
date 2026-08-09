@@ -66,14 +66,14 @@ const die = (msg, hint) => {
 
 /* ---------- inputs ---------- */
 
-const sigPath = resolve(ROOT, `contracts/deployments/registration-${CHAIN_ID}.json`);
+const sigPath = resolve(ROOT, `vera-contracts/deployments/registration-${CHAIN_ID}.json`);
 let signed;
 try {
   signed = JSON.parse(readFileSync(sigPath, "utf8"));
 } catch {
   die(
-    `No signature receipt at contracts/deployments/registration-${CHAIN_ID}.json`,
-    "Run: cd contracts && forge script script/SignRegistration.s.sol:SignRegistration --rpc-url monad"
+    `No signature receipt at vera-contracts/deployments/registration-${CHAIN_ID}.json`,
+    "Run: cd vera-contracts && forge script script/SignRegistration.s.sol:SignRegistration --rpc-url monad"
   );
 }
 

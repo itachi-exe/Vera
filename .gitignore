@@ -33,25 +33,25 @@ yarn-debug.log*
 yarn-error.log*
 
 # --- next ---
-web/.next/
-web/out/
-web/build/
+vera-frontend/.next/
+vera-frontend/out/
+vera-frontend/build/
 .next/
 out/
 
 # --- contracts (foundry) ---
-contracts/out/
-contracts/cache/
-contracts/broadcast/
-# Vendored dependency, restored by `contracts/setup.sh`. Not our code to commit.
-contracts/lib/
+vera-contracts/out/
+vera-contracts/cache/
+vera-contracts/broadcast/
+# Vendored dependency, restored by `vera-contracts/setup.sh`. Not our code to commit.
+vera-contracts/lib/
 artifacts/
 cache/
 typechain-types/
 # Deploy receipts carry addresses, never keys — but they are per-environment.
 # Deploy.s.sol writes both copies; the second is the one the frontend fetches.
-contracts/deployments/*.json
-web/public/deployments/*.json
+vera-contracts/deployments/*.json
+vera-frontend/public/deployments/*.json
 
 # --- misc ---
 .DS_Store
@@ -67,9 +67,9 @@ coverage/
 # and not ours to redistribute in every case.
 *.mp4
 *.jpg
-!web/public/**/*.jpg
+!vera-frontend/public/**/*.jpg
 
 # --- vendor docs: access-gated reference, local only ---
 # Scraped from docs.cleanverse.com with our invite code. Contains no credentials,
 # but it is not ours to redistribute — keep it out of the public repo.
-reference/cleanverse/
+docs/reference-cleanverse/

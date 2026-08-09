@@ -4,7 +4,7 @@ Our own summary of the two endpoints Vera calls, written so a future session
 doesn't need to get back through the access gate at docs.cleanverse.com to know
 the shape of things. Taken from the v5.6 reference on 2026-08-06.
 
-The full scraped reference sits in `reference/cleanverse/` — gitignored, because
+The full scraped reference sits in `docs/reference-cleanverse/` — gitignored, because
 it is Cleanverse's document, not ours to redistribute.
 
 ## Base URL and auth
@@ -82,7 +82,7 @@ unrun check as a pass.
 
 AES-256-CBC, PKCS5Padding, Base64. The key is the **Base64-decoded** `api-key`,
 and the IV is **16 zero bytes** — fixed, not random. Implemented in
-`web/lib/cleanverse-server.js`.
+`vera-frontend/lib/cleanverse-server.js`.
 
 A fixed IV is weak by normal standards; it is what the spec mandates, so
 interoperability wins here. Worth knowing rather than mistaking for our choice.

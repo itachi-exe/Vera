@@ -32,33 +32,52 @@ by Monad Foundation). Team **TheSpiders**.
 
 ```
 Vera/
-├─ VERA.md                 this file
-├─ .env                    sandbox credentials (git-ignored)
-├─ .env.example            shape only, no values
-├─ contracts/              Foundry — the protocol itself
+├─ README.md                 repo entry point
+├─ .env                      sandbox credentials (git-ignored)
+├─ .env.example              shape only, no values
+├─ docs/
+│  ├─ VERA.md                this file — status and engineering log
+│  ├─ SUBMISSION.md          the one-page summary for judges
+│  ├─ cleanverse-contract.md just the API surface Vera depends on
+│  └─ reference-cleanverse/  scraped v5.6 vendor docs (git-ignored)
+├─ assets/                   working media: reference video, source bitmap (git-ignored)
+├─ vera-contracts/           Foundry — the protocol itself
 │  ├─ src/
-│  │  ├─ VeraMath.sol      credit rules; integer mirror of web/lib/vera.js
-│  │  ├─ VeraPool.sol      the lending pool
-│  │  ├─ IVeraOracle.sol   price interface — must revert, never return 0
-│  │  ├─ MockOracle.sol    owner-set prices, testnet only
-│  │  └─ MockERC20.sol     mUSDC / mETH / mWBTC with an open faucet
-│  ├─ test/                138 tests, including a JS↔Solidity parity suite
-│  │  └─ fixtures/         rates.json, generated from the UI library
-│  └─ script/
-│     ├─ Deploy.s.sol      deploys the stack, writes deployments/<chainid>.json
-│     └─ Demo.s.sol        the two-wallet claim, asserted on chain
-└─ web/                    Next.js 16 landing page + app
+│  │  ├─ VeraMath.sol        credit rules; integer mirror of vera-frontend/lib/vera.js
+│  │  ├─ VeraPool.sol        the lending pool
+│  │  ├─ IVeraOracle.sol     price interface — must revert, never return 0
+│  │  ├─ MockOracle.sol      owner-set prices, testnet only
+│  │  └─ MockERC20.sol       mUSDC / mETH / mWBTC with an open faucet
+│  ├─ test/                  138 tests, including a JS↔Solidity parity suite
+│  │  └─ fixtures/           rates.json, generated from the UI library
+│  ├─ script/
+│  │  ├─ Deploy.s.sol        deploys the stack, writes deployments/<chainid>.json
+│  │  ├─ Demo.s.sol          the two-wallet claim, asserted on chain
+│  │  └─ SignRegistration.s.sol  EIP-191 owner signature for /validator/register
+│  └─ deployments/           deploy receipts, addresses only (git-ignored)
+└─ vera-frontend/            Next.js 16 landing page + app
    ├─ app/
-   │  ├─ globals.css       design tokens
-   │  ├─ sections.css      section + component styles
-   │  ├─ layout.js         Fraunces + Hanken Grotesk
-   │  ├─ page.js           section composition
-   │  └─ api/              cvi + cva route handlers (server-only)
-   ├─ components/          14 landing components, 1:1 with the reference
-   ├─ lib/                 vera.js (protocol math), cleanverse*.js, apass.js
-   ├─ scripts/             e2e-cvi-cva.mjs, gen-rate-fixtures.mjs
-   └─ public/vera-mark.svg traced logo
+   │  ├─ globals.css         design tokens
+   │  ├─ sections.css        section + component styles
+   │  ├─ layout.js           Fraunces + Hanken Grotesk
+   │  ├─ page.js             section composition
+   │  └─ api/                cvi + cva route handlers (server-only)
+   ├─ components/            14 landing components, plus app/ for the connected screen
+   ├─ lib/                   vera.js (protocol math), cleanverse*.js, apass.js, wallet.js
+   ├─ scripts/               e2e suites, a11y audits, gen-rate-fixtures.mjs
+   └─ public/                vera-mark.svg, hero media, deployments/ (git-ignored)
 ```
+
+The two directories are wired together in three places, all of them load-bearing:
+
+| Direction | Path | Why |
+|---|---|---|
+| frontend → contracts | `vera-frontend/scripts/gen-rate-fixtures.mjs` writes `vera-contracts/test/fixtures/rates.json` | the parity suite checks Solidity against the rates the UI quotes |
+| contracts → frontend | `Deploy.s.sol` writes `../vera-frontend/public/deployments/<chainid>.json` | served at `/deployments/<chainid>.json`, the exact path `lib/wallet.js` fetches |
+| frontend → contracts | `register-pool.mjs` reads `vera-contracts/deployments/registration-<chainid>.json` | the EIP-191 signature Foundry produced, posted to `/validator/register` |
+
+`vera-frontend/.env` is a symlink to the root `.env`, so both halves read one file
+and credentials are never duplicated.
 
 ## Design
 
@@ -84,7 +103,7 @@ original — none of theirs is reused.
 ## Running it
 
 ```bash
-cd web
+cd vera-frontend
 npm install
 npm run dev      # http://localhost:3000
 npm run build
@@ -117,11 +136,11 @@ reference at docs.cleanverse.com, scraped with the access code in `.env`.
 
 | File | Role |
 |---|---|
-| `web/lib/cleanverse-server.js` | Server-only client. `import "server-only"` so a client import fails the build. AES-256-CBC helpers, HMAC webhook verify, request timeouts. |
-| `web/lib/apass.js` | Pure interpretation — scoring, expiry, compliance verdicts. No I/O, so it is unit-testable. |
-| `web/app/api/cvi/route.js` | `verifyIdentity` — POST `/query_apass`. |
-| `web/app/api/cva/route.js` | `checkCompliance` — attestation layer, plus `/validator/verify` once a pool is registered. |
-| `web/lib/cleanverse.js` | Browser-side fetchers. Fails **closed**: a failed check reports `cleared: false`. |
+| `vera-frontend/lib/cleanverse-server.js` | Server-only client. `import "server-only"` so a client import fails the build. AES-256-CBC helpers, HMAC webhook verify, request timeouts. |
+| `vera-frontend/lib/apass.js` | Pure interpretation — scoring, expiry, compliance verdicts. No I/O, so it is unit-testable. |
+| `vera-frontend/app/api/cvi/route.js` | `verifyIdentity` — POST `/query_apass`. |
+| `vera-frontend/app/api/cva/route.js` | `checkCompliance` — attestation layer, plus `/validator/verify` once a pool is registered. |
+| `vera-frontend/lib/cleanverse.js` | Browser-side fetchers. Fails **closed**: a failed check reports `cleared: false`. |
 
 Credentials never reach the browser — the client talks to our own two routes,
 not to Cleanverse. Verified by grepping the built bundle for the live values:
@@ -131,9 +150,9 @@ Identity is 30% of the trust score. A frozen or expired A-Pass scores zero
 however good its tier, and the on-chain layer cannot rescue a wallet the
 attestation layer rejected.
 
-**Verified end to end** — `web/scripts/e2e-cvi-cva.mjs`, against a real attested
+**Verified end to end** — `vera-frontend/scripts/e2e-cvi-cva.mjs`, against a real attested
 wallet and one that genuinely holds no A-Pass. These are also the exact numbers
-`contracts/script/Demo.s.sol` proves on chain — the UI quote and the pool agree:
+`vera-contracts/script/Demo.s.sol` proves on chain — the UI quote and the pool agree:
 
 | | Verified | Anonymous |
 |---|---|---|
@@ -147,14 +166,14 @@ wallet and one that genuinely holds no A-Pass. These are also the exact numbers
 
 Score inputs are identity 681 (measured on the sandbox A-Pass), history 800,
 repayment 700. History and repayment are defined once in `historyInputs()`
-(`web/lib/cleanverse.js`) and mirrored by the demo script's constants; identity
+(`vera-frontend/lib/cleanverse.js`) and mirrored by the demo script's constants; identity
 is not a constant on the web side at all — it is computed from the live A-Pass
 by `identityScoreFrom()`, and 681 is what that returns for the sandbox record.
 They were briefly out of sync (the UI used 700/848) and were unified on
 2026-08-07. `Demo.s.sol` held 680 until 2026-08-08; both weight to 204/300 and
 score 739, which is why it read correctly on screen while being the wrong number.
 
-Unit suite `web/lib/apass.test.js` — 17/17, fixtures captured from the sandbox.
+Unit suite `vera-frontend/lib/apass.test.js` — 17/17, fixtures captured from the sandbox.
 
 **Known gap, stated rather than faked.** The on-chain half of CVA needs a Monad
 pool registered via `POST /validator/register`, which needs a deployed pool and
@@ -188,7 +207,7 @@ the speed, and both are pinned by tests rather than by reading:
 - A failure is never answered from an older success. That would be the fail-closed
   gate opening on error, which is the one thing it must not do.
 
-`web/scripts/verify-read-cache.mjs` — 22 checks against a stubbed upstream with a
+`vera-frontend/scripts/verify-read-cache.mjs` — 22 checks against a stubbed upstream with a
 call counter, so "served from cache" is proven by the absence of a request rather
 than inferred from a timing. Mutation-checked: removing the `cacheable` predicate
 makes it fail.
@@ -199,7 +218,7 @@ stall accused a compliant wallet of failing compliance. Only `check-failed` and
 the not-yet-loaded state now read **Unknown**; every other status in `lib/apass.js`
 is a real determination and still reads Blocked. Note that `unscreened` is itself
 a determination — "no A-Pass exists" — so it is not the empty state.
-`web/scripts/e2e-cva-degraded.mjs` proves it under the exact failure it exists
+`vera-frontend/scripts/e2e-cva-degraded.mjs` proves it under the exact failure it exists
 for: with `/api/cva` forced to 502 the chip reads Unknown, the attestation is
 still honoured at 739 / 71% / 5.7%, and the draw is still refused.
 
@@ -207,12 +226,12 @@ still honoured at 739 / 71% / 5.7%, and the draw is still refused.
 
 With several extensions installed, `window.ethereum` holds whichever one won the
 injection race, so a single "Connect" button connects an arbitrary wallet.
-`web/lib/wallet.js` now discovers wallets over **EIP-6963** and names them. The
+`vera-frontend/lib/wallet.js` now discovers wallets over **EIP-6963** and names them. The
 listener is registered before `eip6963:requestProvider` is dispatched — reversing
 that misses every wallet already loaded. One wallet stays one click; the picker
 only appears when there is a real ambiguity, and the choice persists.
 
-`web/scripts/e2e-eip6963.mjs` announces two wallets and points `window.ethereum`
+`vera-frontend/scripts/e2e-eip6963.mjs` announces two wallets and points `window.ethereum`
 at the **wrong** one on purpose, so a cosmetic picker fails the test. The legacy
 single-`window.ethereum` path is still covered by `e2e-wallet.mjs`, 19/19.
 
@@ -256,7 +275,7 @@ generate, read, echo, or otherwise handle that value.
    Earlier drafts of this file said `setValidatorPoolId(<id>)`, which described
    a field that does not exist.
 3. Fill the addresses block in `SUBMISSION.md` from
-   `contracts/deployments/10143.json` once step 1 lands.
+   `vera-contracts/deployments/10143.json` once step 1 lands.
 
 ## Submission — due 2026-08-09 23:59 UTC
 

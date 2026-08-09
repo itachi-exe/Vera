@@ -27,15 +27,15 @@ continuous curve — not a tier lookup. Anonymous wallets are not refused; they
 are capped at a 45% LTV and priced accordingly, so the verified path is a
 benefit rather than a gate.
 
-The same rules exist twice on purpose: `web/lib/vera.js` quotes the terms in the
-UI, and `contracts/src/VeraMath.sol` enforces them on chain. A parity suite
+The same rules exist twice on purpose: `vera-frontend/lib/vera.js` quotes the terms in the
+UI, and `vera-contracts/src/VeraMath.sol` enforces them on chain. A parity suite
 generates a fixture from the JS library and asserts the Solidity mirror matches
 point-for-point across all 1001 scores and 1960 trust-score cases. Divergence
 there would mean the pool charges a rate the borrower never agreed to.
 
 ## The claim, proven on chain
 
-`contracts/script/Demo.s.sol` funds two wallets with **identical** collateral
+`vera-contracts/script/Demo.s.sol` funds two wallets with **identical** collateral
 and history, one attested and one not, then reads the pool state back with
 `cast` rather than trusting the script's own output:
 
@@ -49,7 +49,7 @@ and history, one attested and one not, then reads the pool state back with
 | Max borrow (3 mETH) | 6,390 mUSDC | 4,050 mUSDC |
 
 These are the same numbers the UI quotes, verified end to end against the live
-sandbox by `web/scripts/e2e-cvi-cva.mjs` — one real attested wallet, and one
+sandbox by `vera-frontend/scripts/e2e-cvi-cva.mjs` — one real attested wallet, and one
 that genuinely holds no A-Pass.
 
 ## CVI · CVA integration points
@@ -57,7 +57,7 @@ that genuinely holds no A-Pass.
 Every field and endpoint came out of the live v5.6 reference at
 docs.cleanverse.com. None were guessed.
 
-**CVI — identity, 30% of the trust score.** `web/app/api/cvi/route.js` calls
+**CVI — identity, 30% of the trust score.** `vera-frontend/app/api/cvi/route.js` calls
 `POST /query_apass`. `identityScoreFrom()` derives an identity score from the
 live A-Pass — tier, sub-tier, freshness — and `apass.js` weights it to 204/300
 for the sandbox record. A frozen or expired A-Pass scores **zero** regardless of
@@ -65,7 +65,7 @@ tier. "No A-Pass" arrives as business code `0002` and maps to
 `verified: false, score: 0` on a 200 — it is a state, not an error, and it is
 half the demo.
 
-**CVA — compliance, the borrow gate.** `web/app/api/cva/route.js` runs the
+**CVA — compliance, the borrow gate.** `vera-frontend/app/api/cva/route.js` runs the
 attestation layer plus `/validator/verify` once a pool is registered. The gate
 **fails closed**: a failed or unrun check reports `cleared: false`, and where no
 compliance pool is registered the API returns
@@ -90,7 +90,7 @@ testnet deploy runs, `/app` requests `deployments/10143.json`, gets a 404, and
 degrades to the demo path — and `/api/cva` reports the on-chain compliance layer
 as unchecked rather than claiming a pass it has not verified.
 
-<!-- ADDRESSES: fill from contracts/deployments/10143.json once deploy runs -->
+<!-- ADDRESSES: fill from vera-contracts/deployments/10143.json once deploy runs -->
 
 ## Build quality
 

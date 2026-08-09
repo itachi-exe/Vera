@@ -3,13 +3,13 @@
  * Solidity library can be checked against it rather than against a set of
  * numbers someone typed into a test twice.
  *
- * `web/lib/vera.js` is the quote a borrower reads. `contracts/src/VeraMath.sol`
+ * `vera-frontend/lib/vera.js` is the quote a borrower reads. `vera-contracts/src/VeraMath.sol`
  * is what the pool enforces. If they ever disagree, a wallet is charged a rate
  * it never agreed to — so the agreement is asserted, not assumed.
  *
  *   node scripts/gen-rate-fixtures.mjs
  *
- * Writes contracts/test/fixtures/rates.json. Re-run it whenever vera.js changes;
+ * Writes vera-contracts/test/fixtures/rates.json. Re-run it whenever vera.js changes;
  * VeraMathParity.t.sol will fail until the Solidity side is brought back in line.
  */
 
@@ -26,7 +26,7 @@ import {
 } from "../lib/vera.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const out = join(here, "..", "..", "contracts", "test", "fixtures", "rates.json");
+const out = join(here, "..", "..", "vera-contracts", "test", "fixtures", "rates.json");
 
 /** Percent with one decimal place -> basis points, without float dust. */
 const toBps = (percent) => Math.round(percent * 100);
@@ -76,7 +76,7 @@ writeFileSync(
   out,
   JSON.stringify(
     {
-      _generatedBy: "web/scripts/gen-rate-fixtures.mjs from web/lib/vera.js",
+      _generatedBy: "vera-frontend/scripts/gen-rate-fixtures.mjs from vera-frontend/lib/vera.js",
       scores,
       ltvVerified,
       ltvAnon,
