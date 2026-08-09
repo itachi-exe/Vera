@@ -1,0 +1,21 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "test": "node --test lib/*.test.js && node --conditions=react-server scripts/verify-read-cache.mjs",
+    "e2e": "node scripts/e2e-cvi-cva.mjs && node scripts/e2e-wallet.mjs && node scripts/e2e-cva-degraded.mjs && node scripts/e2e-eip6963.mjs && node scripts/a11y-app.mjs",
+    "register": "node --conditions=react-server scripts/register-pool.mjs",
+    "build": "next build",
+    "start": "next start",
+    "dev:lan": "next dev -H 0.0.0.0",
+    "lan": "next build && next start -H 0.0.0.0 -p 3100"
+  },
+  "dependencies": {
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1"
+  }
+}

@@ -1,0 +1,56 @@
+# --- secrets: never commit ---
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# --- node ---
+node_modules/
+.pnp
+.pnp.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- next ---
+web/.next/
+web/out/
+web/build/
+.next/
+out/
+
+# --- contracts (foundry) ---
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+# Vendored dependency, restored by `contracts/setup.sh`. Not our code to commit.
+contracts/lib/
+artifacts/
+cache/
+typechain-types/
+# Deploy receipts carry addresses, never keys — but they are per-environment.
+# Deploy.s.sol writes both copies; the second is the one the frontend fetches.
+contracts/deployments/*.json
+web/public/deployments/*.json
+
+# --- misc ---
+.DS_Store
+*.local
+.vercel
+coverage/
+
+# --- local-only: agent tooling and machine state ---
+.arise/
+
+# --- local-only: working media ---
+# Design references and screen recordings pulled in while building. Not source,
+# and not ours to redistribute in every case.
+*.mp4
+*.jpg
+!web/public/**/*.jpg
+
+# --- vendor docs: access-gated reference, local only ---
+# Scraped from docs.cleanverse.com with our invite code. Contains no credentials,
+# but it is not ours to redistribute — keep it out of the public repo.
+reference/cleanverse/
