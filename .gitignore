@@ -1,9 +1,28 @@
 # --- secrets: never commit ---
+# Anything matching these is credential-bearing. Sandbox keys live in .env and
+# nowhere else. The patterns are deliberately wider than the files that exist
+# today, so a new credential file cannot reach a commit by being newly named.
+# A pre-commit hook enforces the same rule by content.
 .env
 .env.*
 !.env.example
 *.key
 *.pem
+*.p12
+*.pfx
+*.keystore
+id_rsa*
+id_ed25519*
+secrets.*
+credentials.*
+*.secret
+*secrets.json
+# Foundry / Hardhat local key material and broadcast logs that embed the sender.
+keystore/
+.secret
+# Deploy keys or access codes pasted into scratch notes.
+*credentials*.md
+*secrets*.md
 
 # --- node ---
 node_modules/
