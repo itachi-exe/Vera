@@ -1,0 +1,5 @@
+# Deploy.s.sol writes <chainid>.json here; the frontend fetches it from
+# /deployments/<chainid>.json. Foundry cannot write into a directory it is not
+# allowed to read, and it is not allowed to read a path that does not exist —
+# so this directory has to be present in a fresh clone. The receipts themselves
+# are git-ignored; this file is what keeps the directory.
