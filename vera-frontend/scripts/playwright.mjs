@@ -1,0 +1,48 @@
+/**
+ * Resolve Playwright without depending on where it happens to be installed.
+ *
+ * The browser suites are dev tooling, not part of the shipped app, so Playwright
+ * is deliberately not a dependency in package.json — installing it downloads
+ * browser binaries that nothing in production needs.
+ *
+ * Resolution order:
+ *
+ *   1. $PLAYWRIGHT_PATH   explicit override, wins over everything
+ *   2. "playwright"       a normal local or global install
+ *   3. $PLAYWRIGHT_HOME   a checkout elsewhere on the machine
+ *
+ * If none resolve, the caller gets an actionable message rather than a bare
+ * ERR_MODULE_NOT_FOUND naming a path that means nothing to the reader.
+ */
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+
+export async function loadPlaywright() {
+  const candidates = [
+    process.env.PLAYWRIGHT_PATH,
+    "playwright",
+    process.env.PLAYWRIGHT_HOME && `${process.env.PLAYWRIGHT_HOME}/index.mjs`,
+  ].filter(Boolean);
+
+  for (const spec of candidates) {
+    try {
+      return await import(require.resolve(spec));
+    } catch {
+      try {
+        return await import(spec);
+      } catch {}
+    }
+  }
+
+  throw new Error(
+    "Playwright not found. Install it (npm i -D playwright && npx playwright install chromium), " +
+      "or point PLAYWRIGHT_PATH at an existing install."
+  );
+}
+
+/** Convenience for the common `const { chromium } = ...` case. */
+export async function chromium() {
+  const { chromium: c } = await loadPlaywright();
+  return c;
+}

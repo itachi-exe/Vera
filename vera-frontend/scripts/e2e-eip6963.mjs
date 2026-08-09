@@ -8,30 +8,12 @@
  *
  * Run with a server already up:  node scripts/e2e-eip6963.mjs
  */
-import { createRequire } from "node:module";
 
 // `localhost`, not `127.0.0.1`: Next 16 blocks cross-origin dev resources by
 // default, and reaching the dev server by IP trips that — chunks 403, hydration
 // never runs, and the page sits on "Starting…" looking like a product bug.
 const BASE = process.env.BASE_URL || "http://localhost:3000";
-
-const require = createRequire(import.meta.url);
-async function loadPlaywright() {
-  const candidates = [
-    process.env.PLAYWRIGHT_PATH,
-    "playwright",
-  ].filter(Boolean);
-  for (const c of candidates) {
-    try {
-      return await import(require.resolve(c));
-    } catch {
-      try {
-        return await import(c);
-      } catch {}
-    }
-  }
-  throw new Error("playwright not found — set PLAYWRIGHT_PATH");
-}
+import { loadPlaywright } from "./playwright.mjs";
 
 let failed = 0;
 function check(label, actual, expected) {

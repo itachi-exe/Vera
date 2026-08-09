@@ -10,7 +10,9 @@
  *   node scripts/a11y-audit.mjs [url]
  */
 
-import { chromium } from "playwright";
+import { loadPlaywright } from "./playwright.mjs";
+
+const { chromium } = await loadPlaywright();
 
 const BASE = process.env.BASE ?? "http://localhost:3000";
 const ROUTES = ["/", "/app"];

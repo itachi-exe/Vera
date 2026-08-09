@@ -3,28 +3,12 @@
  * Waits on content rather than fixed timeouts — the Cleanverse round trip
  * varies by a second or so and fixed sleeps make this flaky.
  *
- * Playwright is not a dependency of this app — it is a test-only tool, and
- * installing it pulls browser binaries production never loads. Resolve it the
- * normal way so a clone with its own playwright works; PLAYWRIGHT_PATH
- * overrides that.
+ * Playwright is not a dependency of this app — it is test-only tooling, resolved
+ * at run time by scripts/playwright.mjs.
  */
-let chromium;
-for (const spec of [
-  process.env.PLAYWRIGHT_PATH,
-  'playwright',
-]) {
-  if (!spec) continue;
-  try {
-    ({ chromium } = await import(spec));
-    break;
-  } catch {
-    /* try the next one */
-  }
-}
-if (!chromium) {
-  console.error('playwright not found — `npm i -D playwright`, or set PLAYWRIGHT_PATH');
-  process.exit(2);
-}
+import { loadPlaywright } from "./playwright.mjs";
+
+const { chromium } = await loadPlaywright();
 
 // `npm run dev` serves 3000; `npm run lan` serves 3100. Override with VERA_URL.
 const BASE = process.env.VERA_URL ?? 'http://localhost:3000';

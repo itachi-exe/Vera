@@ -59,9 +59,6 @@ vera-frontend/public/deployments/*.json
 .vercel
 coverage/
 
-# --- local-only: agent tooling and machine state ---
-.arise/
-
 # --- local-only: working media ---
 # Design references and screen recordings pulled in while building. Not source,
 # and not ours to redistribute in every case.

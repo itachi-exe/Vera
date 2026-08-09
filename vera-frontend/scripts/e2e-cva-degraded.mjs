@@ -9,14 +9,9 @@
  * takes seconds against the live sandbox and sampling early reads as unattested
  * by design.
  */
-let chromium;
-for (const spec of [
-  process.env.PLAYWRIGHT_PATH,
-  'playwright',
-]) {
-  if (!spec) continue;
-  try { ({ chromium } = await import(spec)); break } catch { /* next */ }
-}
+import { loadPlaywright } from "./playwright.mjs";
+
+const { chromium } = await loadPlaywright();
 
 const URL = process.env.VERA_URL || 'http://localhost:3000';
 const ATTESTED = '0x5702b24116718DCF49314231222A33403e88Aff8';

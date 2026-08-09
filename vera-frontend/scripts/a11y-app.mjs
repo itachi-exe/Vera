@@ -13,27 +13,9 @@
  *
  *   node scripts/a11y-app.mjs
  */
-import { createRequire } from "node:module";
 
 const BASE = process.env.BASE_URL || "http://localhost:3000";
-
-const require = createRequire(import.meta.url);
-async function loadPlaywright() {
-  const candidates = [
-    process.env.PLAYWRIGHT_PATH,
-    "playwright",
-  ].filter(Boolean);
-  for (const c of candidates) {
-    try {
-      return await import(require.resolve(c));
-    } catch {
-      try {
-        return await import(c);
-      } catch {}
-    }
-  }
-  throw new Error("playwright not found — set PLAYWRIGHT_PATH");
-}
+import { loadPlaywright } from "./playwright.mjs";
 
 let failed = 0;
 function check(label, actual, expected) {

@@ -14,23 +14,9 @@
  *   VERA_URL=http://localhost:3100 node scripts/e2e-wallet.mjs
  */
 
-let chromium;
-for (const spec of [
-  process.env.PLAYWRIGHT_PATH,
-  'playwright',
-]) {
-  if (!spec) continue;
-  try {
-    ({ chromium } = await import(spec));
-    break;
-  } catch {
-    /* try the next one */
-  }
-}
-if (!chromium) {
-  console.error('playwright not found — `npm i -D playwright`, or set PLAYWRIGHT_PATH');
-  process.exit(2);
-}
+import { loadPlaywright } from "./playwright.mjs";
+
+const { chromium } = await loadPlaywright();
 
 const BASE = process.env.VERA_URL ?? 'http://localhost:3000';
 

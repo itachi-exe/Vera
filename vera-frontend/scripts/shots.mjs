@@ -14,29 +14,11 @@
  *
  *   node scripts/shots.mjs
  */
-import { createRequire } from "node:module";
 
 const BASE = process.env.BASE_URL || "http://localhost:3000";
 const OUT = new URL("../public/shots/", import.meta.url).pathname;
 const VIEWPORT = { width: 390, height: 711 };
-
-const require = createRequire(import.meta.url);
-async function loadPlaywright() {
-  const candidates = [
-    process.env.PLAYWRIGHT_PATH,
-    "playwright",
-  ].filter(Boolean);
-  for (const c of candidates) {
-    try {
-      return await import(require.resolve(c));
-    } catch {
-      try {
-        return await import(c);
-      } catch {}
-    }
-  }
-  throw new Error("playwright not found — set PLAYWRIGHT_PATH");
-}
+import { loadPlaywright } from "./playwright.mjs";
 
 const { chromium } = await loadPlaywright();
 const browser = await chromium.launch();

@@ -83,8 +83,8 @@ and credentials are never duplicated.
 
 Ported component-for-component from **https://www.stax.best**. All tokens were
 pulled from the live site via computed styles, never estimated. The canonical
-copy of every token is the stylesheet itself, so there is no second table to
-drift out of sync with it.
+copy of every token is `vera-frontend/app/globals.css` — the stylesheet is the
+spec, so there is no second table to drift out of sync with it.
 
 The short version:
 
