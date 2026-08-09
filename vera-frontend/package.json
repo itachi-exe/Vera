@@ -1,10 +1,10 @@
 {
-  "name": "web",
+  "name": "vera-frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "test": "node --test lib/*.test.js && node --conditions=react-server scripts/verify-read-cache.mjs",
+    "test": "node --test lib/*.test.js && npm --prefix ../vera-backend test",
     "e2e": "node scripts/e2e-cvi-cva.mjs && node scripts/e2e-wallet.mjs && node scripts/e2e-cva-degraded.mjs && node scripts/e2e-eip6963.mjs && node scripts/a11y-app.mjs",
     "register": "node --conditions=react-server scripts/register-pool.mjs",
     "build": "next build",

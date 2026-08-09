@@ -59,7 +59,7 @@ hydrates over WiFi, buttons render without handlers attached.
 
 ## Security
 
-Cleanverse credentials are read server-side only. `lib/cleanverse-server.js` is
+Cleanverse credentials are read server-side only. `vera-backend/src/cleanverse.js` is
 marked `import "server-only"`, so a client import fails the build rather than
 shipping a key. The built bundle is grepped for the live credential values as a
 check, not as an assumption.

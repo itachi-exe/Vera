@@ -4,9 +4,9 @@ import {
   credentialsPresent,
   queryApass,
   verifyCompliance,
-} from "@/lib/cleanverse-server";
+} from "@vera/backend/cleanverse";
 import { complianceFrom, mergeCompliance } from "@/lib/apass";
-import { rateLimit } from "@/lib/rateLimit";
+import { rateLimit } from "@vera/backend/rate-limit";
 
 /**
  * CVA — compliance screening.

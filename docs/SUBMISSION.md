@@ -75,7 +75,7 @@ compliance pool is registered the API returns
 silence. The gate is also enforced in `VeraPool.sol`, so a wallet blocked in the
 UI cannot borrow by calling the contract directly.
 
-Credentials never reach the browser. `lib/cleanverse-server.js` opens with
+Credentials never reach the browser. `vera-backend/src/cleanverse.js` opens with
 `import "server-only"`, so a client import fails the build instead of leaking
 quietly; the browser talks only to our two route handlers. Verified by grepping
 the production bundle for the live values — zero hits.

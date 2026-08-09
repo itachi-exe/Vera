@@ -1,4 +1,4 @@
-import { rateLimit } from "@/lib/rateLimit";
+import { rateLimit } from "@vera/backend/rate-limit";
 
 /**
  * Live prices for the Monad ecosystem assets shown on the Markets screen.

@@ -55,6 +55,11 @@ Vera/
 │  │  ├─ Demo.s.sol          the two-wallet claim, asserted on chain
 │  │  └─ SignRegistration.s.sol  EIP-191 owner signature for /validator/register
 │  └─ deployments/           deploy receipts, addresses only (git-ignored)
+├─ vera-backend/             the credentialed server tier — the only code with keys
+│  ├─ src/
+│  │  ├─ cleanverse.js       API client: AES-256-CBC, retries, 60s read cache, HMAC verify
+│  │  └─ rate-limit.js       per-client throttle on the quota-spending routes
+│  └─ test/read-cache.mjs    22 checks against a stubbed upstream
 └─ vera-frontend/            Next.js 16 landing page + app
    ├─ app/
    │  ├─ globals.css         design tokens
@@ -63,8 +68,9 @@ Vera/
    │  ├─ page.js             section composition
    │  └─ api/                cvi + cva route handlers (server-only)
    ├─ components/            14 landing components, plus app/ for the connected screen
-   ├─ lib/                   vera.js (protocol math), cleanverse*.js, apass.js, wallet.js
+   ├─ lib/                   vera.js (protocol math), cleanverse.js, apass.js, wallet.js
    ├─ scripts/               e2e suites, a11y audits, gen-rate-fixtures.mjs
+   ├─ jsconfig.json          maps @vera/backend/* to ../vera-backend/src/*
    └─ public/                vera-mark.svg, hero media, deployments/ (git-ignored)
 ```
 
@@ -76,8 +82,15 @@ The two directories are wired together in three places, all of them load-bearing
 | contracts → frontend | `Deploy.s.sol` writes `../vera-frontend/public/deployments/<chainid>.json` | served at `/deployments/<chainid>.json`, the exact path `lib/wallet.js` fetches |
 | frontend → contracts | `register-pool.mjs` reads `vera-contracts/deployments/registration-<chainid>.json` | the EIP-191 signature Foundry produced, posted to `/validator/register` |
 
-`vera-frontend/.env` is a symlink to the root `.env`, so both halves read one file
-and credentials are never duplicated.
+`vera-frontend/.env` is a symlink to the root `.env`, so every half reads one
+file and credentials are never duplicated. `vera-backend` reads `process.env`
+directly and has no `.env` of its own — a second credential path would earn
+nothing and give the next mistake somewhere else to hide.
+
+`next.config.mjs` sets `turbopack.root` to the repo root so the build may follow
+the `@vera/backend/*` alias one directory up. Without it Turbopack resolves the
+alias and then refuses to leave the project directory, failing every route
+handler with `Module not found` naming an alias it just resolved.
 
 ## Design
 
@@ -136,7 +149,7 @@ reference at docs.cleanverse.com, scraped with the access code in `.env`.
 
 | File | Role |
 |---|---|
-| `vera-frontend/lib/cleanverse-server.js` | Server-only client. `import "server-only"` so a client import fails the build. AES-256-CBC helpers, HMAC webhook verify, request timeouts. |
+| `vera-backend/src/cleanverse.js` | Server-only client. `import "server-only"` so a client import fails the build. AES-256-CBC helpers, HMAC webhook verify, request timeouts. |
 | `vera-frontend/lib/apass.js` | Pure interpretation — scoring, expiry, compliance verdicts. No I/O, so it is unit-testable. |
 | `vera-frontend/app/api/cvi/route.js` | `verifyIdentity` — POST `/query_apass`. |
 | `vera-frontend/app/api/cva/route.js` | `checkCompliance` — attestation layer, plus `/validator/verify` once a pool is registered. |
@@ -202,7 +215,7 @@ compliance **fails closed**, every one of those renders as a wallet that cannot
 be assessed — which, seconds after connecting, reads to a user as a broken app.
 Three layers now sit between that and the screen.
 
-**Retries with a total budget** (`cleanverse-server.js`). Per-attempt deadlines
+**Retries with a total budget** (`vera-backend/src/cleanverse.js`). Per-attempt deadlines
 of 6s / 8s / 10s under a 20s ceiling for the whole chain. The first deadline is
 deliberately the shortest: a stalled request does not recover, so waiting long
 before retrying spends the budget on a call that was never going to answer. The
@@ -219,7 +232,7 @@ the speed, and both are pinned by tests rather than by reading:
 - A failure is never answered from an older success. That would be the fail-closed
   gate opening on error, which is the one thing it must not do.
 
-`vera-frontend/scripts/verify-read-cache.mjs` — 22 checks against a stubbed upstream with a
+`vera-backend/test/read-cache.mjs` — 22 checks against a stubbed upstream with a
 call counter, so "served from cache" is proven by the absence of a request rather
 than inferred from a timing. Mutation-checked: removing the `cacheable` predicate
 makes it fail.

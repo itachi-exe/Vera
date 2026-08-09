@@ -1,6 +1,6 @@
-import { CHAIN, CleanverseError, credentialsPresent, queryApass } from "@/lib/cleanverse-server";
+import { CHAIN, CleanverseError, credentialsPresent, queryApass } from "@vera/backend/cleanverse";
 import { identityScoreFrom, isActive, isExpired } from "@/lib/apass";
-import { rateLimit } from "@/lib/rateLimit";
+import { rateLimit } from "@vera/backend/rate-limit";
 
 /**
  * CVI — identity attestation lookup.

@@ -9,7 +9,7 @@
  *   2. node --conditions=react-server scripts/register-pool.mjs --dry-run
  *   3. node --conditions=react-server scripts/register-pool.mjs
  *
- * The `--conditions=react-server` flag is not optional: lib/cleanverse-server.js
+ * The `--conditions=react-server` flag is not optional: vera-backend/src/cleanverse.js
  * is marked `import "server-only"`, which throws under the default condition.
  * Reusing that module rather than reimplementing AES here is the point — a
  * second copy of the cipher is a second thing that can drift from the spec.
@@ -33,7 +33,7 @@ try {
 }
 
 const { BASE_URL, CHAIN, credentialsPresent, encryptBody, isPoolRegistered, poolRules } =
-  await import("../lib/cleanverse-server.js");
+  await import("../../vera-backend/src/cleanverse.js");
 
 const DRY = process.argv.includes("--dry-run");
 const CHAIN_ID = Number(process.env.MONAD_CHAIN_ID || 10143);

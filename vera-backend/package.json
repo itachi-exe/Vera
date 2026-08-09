@@ -1,0 +1,17 @@
+{
+  "name": "@vera/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Credentialed server tier: the only code that holds Cleanverse keys.",
+  "exports": {
+    "./cleanverse": "./src/cleanverse.js",
+    "./rate-limit": "./src/rate-limit.js"
+  },
+  "scripts": {
+    "test": "node --conditions=react-server test/read-cache.mjs"
+  },
+  "dependencies": {
+    "server-only": "^0.0.1"
+  }
+}

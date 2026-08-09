@@ -82,7 +82,7 @@ unrun check as a pass.
 
 AES-256-CBC, PKCS5Padding, Base64. The key is the **Base64-decoded** `api-key`,
 and the IV is **16 zero bytes** — fixed, not random. Implemented in
-`vera-frontend/lib/cleanverse-server.js`.
+`vera-backend/src/cleanverse.js`.
 
 A fixed IV is weak by normal standards; it is what the spec mandates, so
 interoperability wins here. Worth knowing rather than mistaking for our choice.

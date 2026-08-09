@@ -1,5 +1,5 @@
 /**
- * The read cache in lib/cleanverse-server.js, proven against a stubbed upstream.
+ * The read cache in src/cleanverse.js, proven against a stubbed upstream.
  *
  * The cache exists because the Cleanverse sandbox intermittently stalls past the
  * whole 20s retry budget, and the same few addresses get looked up again on every
@@ -9,10 +9,10 @@
  * the ones that keep that from happening.
  *
  * Not in lib/*.test.js on purpose — `npm test` runs plain `node --test`, and
- * cleanverse-server.js is `import "server-only"`, which throws without the
+ * cleanverse.js is `import "server-only"`, which throws without the
  * react-server condition.
  *
- *   node --conditions=react-server scripts/verify-read-cache.mjs
+ *   npm --prefix vera-backend test
  */
 
 // Set before the import: `call()` reads CLEANVERSE_API_ID at module scope and
@@ -22,7 +22,7 @@ process.env.CLEANVERSE_API_ID = "test-api-id";
 process.env.CLEANVERSE_API_KEY = Buffer.alloc(32, 7).toString("base64");
 
 const { queryApass, verifyCompliance, resetReadCache } = await import(
-  "../lib/cleanverse-server.js"
+  "../src/cleanverse.js"
 );
 
 let failed = 0;
