@@ -1,0 +1,394 @@
+/* ============================================================
+   Vera design system
+   Tokens ported from https://www.stax.best via computed styles.
+   Values are exact, extracted from the port target via computed styles.
+   This file is the canonical token list; nothing else redefines them.
+   ============================================================ */
+
+:root {
+  /* surfaces */
+  --bg: #0c0f0a;
+  --bg-panel: #11150f;
+  --bg-card: rgba(34, 42, 32, 0.55);
+  --bg-card-solid: #1b2018;
+  --bg-chip: rgba(38, 47, 36, 0.74);
+  --bg-cool: rgba(38, 45, 49, 0.52);
+
+  /* text */
+  --text: #eef2ea;
+  --text-alt: #eef2f0;
+  --text-muted: #a8b0a2;
+  --text-muted-cool: #8a938f;
+
+  /* accents */
+  --accent: #6cc09c;
+  --sand: #f7e6cd;
+  --warn: #e3995f;
+  --on-accent: #0f1413;
+
+  /* lines */
+  --hairline: rgba(255, 255, 255, 0.1);
+  --hairline-strong: rgba(255, 255, 255, 0.34);
+  --glass: rgba(255, 255, 255, 0.16);
+
+  /* Liquid glass — the hero pair only. Each value is the ported stax token
+     above times 1.3, kept as its own token so the port stays readable as a
+     port: --glass/--hairline-strong still say what the reference said.
+     Blur and saturation are deliberately NOT tokens: Lightning CSS drops a
+     backdrop-filter whose value contains var(), because it cannot resolve the
+     value to decide vendor prefixing. Literals only, or the rule vanishes. */
+  --glass-liquid: rgba(255, 255, 255, 0.208);
+  --glass-liquid-hover: rgba(255, 255, 255, 0.286);
+  --glass-liquid-rim: rgba(255, 255, 255, 0.442);
+
+  /* type scale — desktop */
+  --fs-hero: 92px;
+  --fs-h2-lg: 64px;
+  --fs-h2: 58px;
+  --fs-card-title: 26px;
+  --fs-h3: 20px;
+  --fs-h3-sm: 17px;
+  --fs-panel-title: 18px;
+  --fs-body: 16px;
+  --fs-micro: 11.5px;
+
+  /* display metrics — uniform across the reference */
+  --display-tracking: -0.035em;
+  --display-lh: 1.02;
+
+  /* layout */
+  --container: 1200px;
+  --gutter: 28px;
+  --section-y: 92px;
+
+  /* radii */
+  --r-card: 16px;
+  --r-pill: 99px;
+  --r-panel: 36px;
+  --r-panel-sm: 32px;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+html,
+body {
+  max-width: 100vw;
+  /* `clip`, not `hidden`. Both stop sideways scroll, but `hidden` makes the
+     element a scroll container, and a scroll container between a sticky
+     element and the viewport is what sticky positions against — so every
+     `position: sticky` descendant silently became `static`. `clip` does not
+     create a scrollport, so the app's desktop rails actually stick. */
+  overflow-x: clip;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: var(--fs-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* ---------- primitives ---------- */
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.sec {
+  padding-block: var(--section-y);
+}
+
+.serif {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 600;
+  letter-spacing: var(--display-tracking);
+  line-height: var(--display-lh);
+  color: var(--text);
+}
+
+.serif em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+h1.serif {
+  font-size: var(--fs-hero);
+}
+h2.serif {
+  font-size: var(--fs-h2);
+  line-height: 1.05;
+}
+h2.serif.lg {
+  font-size: var(--fs-h2-lg);
+  line-height: 1.06;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.lede {
+  font-size: 17px;
+  color: var(--text-muted);
+  max-width: 46ch;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.up {
+  color: var(--accent);
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  font-style: normal;
+}
+.down {
+  color: var(--warn);
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  font-style: normal;
+}
+
+.rule {
+  height: 1px;
+  background: var(--hairline);
+  border: 0;
+}
+
+/* ---------- buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--r-pill);
+  font-weight: 700;
+  white-space: nowrap;
+  transition: transform 0.18s var(--ease), background-color 0.18s var(--ease),
+    border-color 0.18s var(--ease), opacity 0.18s var(--ease);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* nav primary — 44px / 0 20px / 14.5px / 700 */
+.btn-nav {
+  height: 44px;
+  padding-inline: 20px;
+  font-size: 14.5px;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.btn-nav:hover {
+  background: #7ccaa8;
+}
+
+/* hero glass — 52px / 0 26px / 16px / 700
+   Liquid glass at +30%: fill, rim and blur are each the original times 1.3.
+   The saturate() and the two inset edges are what make it read as glass rather
+   than as fog — blur alone greys out whatever is behind it, while saturation
+   keeps the backdrop's colour alive and the bright top edge is the specular
+   catch that sells thickness. box-shadow is restated in the transition because
+   .btn's list does not include it, and an un-transitioned shadow snaps. */
+.btn-glass {
+  height: 52px;
+  padding-inline: 26px;
+  font-size: 16px;
+  background: var(--glass-liquid);
+  border: 1px solid var(--glass-liquid-rim);
+  color: #fff;
+  -webkit-backdrop-filter: blur(7.8px) saturate(1.3);
+  backdrop-filter: blur(7.8px) saturate(1.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.16),
+    0 8px 22px rgba(0, 0, 0, 0.3);
+  transition: transform 0.18s var(--ease), background-color 0.18s var(--ease),
+    border-color 0.18s var(--ease), opacity 0.18s var(--ease),
+    box-shadow 0.18s var(--ease);
+}
+.btn-glass:hover {
+  background: var(--glass-liquid-hover);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+    0 10px 26px rgba(0, 0, 0, 0.34);
+}
+
+/* primary large — 56px / 0 30px / 16.5px / 700 */
+.btn-primary {
+  height: 56px;
+  padding-inline: 30px;
+  font-size: 16.5px;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.btn-primary:hover {
+  background: #7ccaa8;
+}
+
+/* secondary — 52px / 0 26px / 16px / 700 */
+.btn-secondary {
+  height: 52px;
+  padding-inline: 26px;
+  font-size: 16px;
+  background: var(--bg-chip);
+  border: 1px solid var(--hairline);
+  color: var(--text);
+}
+.btn-secondary:hover {
+  background: rgba(48, 58, 45, 0.85);
+}
+
+/* dark button on the mint CTA panel */
+.btn-on-accent {
+  height: 52px;
+  padding-inline: 26px;
+  font-size: 16px;
+  background: #fff;
+  color: var(--on-accent);
+}
+.btn-on-accent.ghost {
+  background: transparent;
+  border: 1px solid rgba(15, 20, 19, 0.28);
+  color: var(--on-accent);
+}
+
+/* ---------- cards ---------- */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-card);
+  backdrop-filter: blur(10px);
+}
+
+/* ---------- scroll reveal ---------- */
+
+/* Fail open: content is visible by default. Elements are only hidden once JS
+   has confirmed it is running and can animate them back in (html.js-reveal).
+   If the bundle is slow, blocked, or errors, the page still renders in full. */
+.reveal {
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.js-reveal .reveal {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.js-reveal .reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .reveal,
+  .js-reveal .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .btn:hover {
+    transform: none;
+  }
+  .ticker-track {
+    animation: none !important;
+  }
+}
+
+/* ============================================================
+   Responsive type — the reference scales the display sizes down
+   hard on narrow viewports while holding tracking and leading.
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  :root {
+    --fs-hero: 64px;
+    --fs-h2-lg: 46px;
+    --fs-h2: 42px;
+    --section-y: 72px;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --fs-hero: 40px;
+    --fs-h2-lg: 32px;
+    --fs-h2: 30px;
+    --fs-card-title: 22px;
+    --gutter: 20px;
+    --section-y: 60px;
+  }
+}
