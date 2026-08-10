@@ -62,9 +62,15 @@ coverage/
 # --- local-only: working media ---
 # Design references and screen recordings pulled in while building. Not source,
 # and not ours to redistribute in every case.
+#
+# Anything under vera-frontend/public/ is the exception: it is not a working file,
+# it is a shipped asset the site fetches by URL. The poster already had an escape
+# and the video it stands in for did not, so deploys served the still image and
+# no video at all.
 *.mp4
 *.jpg
 !vera-frontend/public/**/*.jpg
+!vera-frontend/public/**/*.mp4
 
 # --- vendor docs: access-gated reference, local only ---
 # Scraped from docs.cleanverse.com with our invite code. Contains no credentials,
