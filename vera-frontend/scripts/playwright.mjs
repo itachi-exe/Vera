@@ -26,11 +26,20 @@ export async function loadPlaywright() {
   ].filter(Boolean);
 
   for (const spec of candidates) {
-    try {
-      return await import(require.resolve(spec));
-    } catch {
+    for (const load of [() => import(require.resolve(spec)), () => import(spec)]) {
       try {
-        return await import(spec);
+        const mod = await load();
+        /*
+         * Playwright is CommonJS. Node usually detects its named exports, but
+         * when it is resolved from outside the project (PLAYWRIGHT_PATH, a
+         * global install) that detection can fail and every named export comes
+         * back undefined — which surfaces at the call site as
+         * "Cannot read properties of undefined (reading 'launch')", naming
+         * `chromium` rather than the resolution that actually went wrong.
+         * Unwrap the default interop object so callers always get the real one.
+         */
+        if (mod?.chromium) return mod;
+        if (mod?.default?.chromium) return mod.default;
       } catch {}
     }
   }
