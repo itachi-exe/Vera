@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Credentialed server tier: the only code that holds Cleanverse keys.",
   "exports": {
+    "./chain": "./src/chain.js",
     "./cleanverse": "./src/cleanverse.js",
     "./rate-limit": "./src/rate-limit.js"
   },
