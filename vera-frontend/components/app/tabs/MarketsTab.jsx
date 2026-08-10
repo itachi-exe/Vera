@@ -8,14 +8,6 @@ import TokenLogo from "../TokenLogo";
 
 const FILTERS = ["All", "Collateral", "Stables", "Borrowable"];
 
-const SERIES = {
-  mUSDC: [12, 12, 11, 12, 12, 13, 12, 12, 12, 12],
-  mETH: [8, 11, 9, 13, 12, 16, 14, 18, 17, 20],
-  mWBTC: [19, 17, 18, 14, 15, 12, 13, 10, 11, 9],
-};
-
-const DELTA = { mUSDC: 0.01, mETH: 2.41, mWBTC: -1.36 };
-
 /**
  * Monad-native assets quoted live, not yet listed as markets.
  *
@@ -31,31 +23,18 @@ const ECOSYSTEM = [
   { symbol: "shMON", note: "ShMonad liquid staking · quote only" },
 ];
 
-function Spark({ points, up }) {
-  const w = 62;
-  const h = 26;
-  const max = Math.max(...points);
-  const min = Math.min(...points);
-  const span = max - min || 1;
-  const d = points
-    .map((p, i) => {
-      const x = (i / (points.length - 1)) * w;
-      const y = h - ((p - min) / span) * h;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`;
-    })
-    .join(" ");
-
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} fill="none" aria-hidden="true">
-      <path
-        d={d}
-        stroke={up ? "var(--accent)" : "var(--warn)"}
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+/**
+ * What a pool asset is, in the deployed contract's terms.
+ *
+ * `VeraPool` is single-collateral and single-debt by construction, so exactly
+ * one of these rows is depositable, one is borrowable, and one is neither —
+ * priced by the oracle but not listed. Saying so beats an LTV figure for a
+ * token the pool would refuse.
+ */
+function role(a, v) {
+  if (a.collateral) return `up to ${v.ltv}% LTV · collateral`;
+  if (a.kind === "stable") return `${v.apy}% APY · borrowable`;
+  return "priced by the oracle · not listed";
 }
 
 /** Markets — the reference's Market screen: search, filter chips, asset rows. */
@@ -79,19 +58,24 @@ export default function MarketsTab({ v, onAction, onAsset }) {
   const rows = useMemo(() => {
     return Object.values(ASSETS)
       .filter((a) => {
+        // The chips describe the pool's own roles, so they read off the same
+        // flags the contract enforces rather than off what happens to be
+        // deposited right now.
         if (filter === "Stables" && a.kind !== "stable") return false;
-        if (filter === "Collateral" && (v.collateral[a.symbol] || 0) <= 0) return false;
+        if (filter === "Collateral" && !a.collateral) return false;
         if (filter === "Borrowable" && a.kind !== "stable") return false;
         const t = `${a.symbol} ${a.name}`.toLowerCase();
         return t.includes(q.trim().toLowerCase());
       })
       .map((a) => ({
         ...a,
-        delta: DELTA[a.symbol],
-        apy: a.kind === "stable" ? v.apy : Number((v.apy * 0.42).toFixed(1)),
-        maxLtv: a.kind === "stable" ? Math.min(v.ltv + 5, 95) : v.ltv,
+        // The oracle's number once /api/pool has answered. There is no 24h
+        // series to draw against it: these are testnet mocks priced by a
+        // contract we set, so a sparkline here would be decoration, not data.
+        price: v.prices?.[a.symbol] ?? a.price,
+        role: role(a, v),
       }));
-  }, [q, filter, v.apy, v.ltv, v.collateral]);
+  }, [q, filter, v.apy, v.ltv, v.prices]);
 
   // Quoted, not listed: they are neither collateral nor borrowable, so every
   // filter but "All" excludes them. Search still reaches them.
@@ -151,17 +135,11 @@ export default function MarketsTab({ v, onAction, onAsset }) {
                 <TokenLogo symbol={a.symbol} />
                 <span className="row-meta">
                   <strong>{a.symbol}</strong>
-                  <em>
-                    {a.kind === "stable" ? `${a.apy}% APY · borrowable` : `up to ${a.maxLtv}% LTV`}
-                  </em>
+                  <em>{a.role}</em>
                 </span>
-                <Spark points={SERIES[a.symbol]} up={a.delta >= 0} />
                 <span className="row-val">
                   <strong>{usd(a.price, a.price < 10 ? 4 : 2)}</strong>
-                  <em className={a.delta >= 0 ? "up" : "down"}>
-                    {a.delta >= 0 ? "+" : ""}
-                    {a.delta}%
-                  </em>
+                  <em>{v.pool.live ? "pool oracle" : "last known"}</em>
                 </span>
               </button>
             </li>

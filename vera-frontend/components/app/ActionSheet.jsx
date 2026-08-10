@@ -209,6 +209,7 @@ export default function ActionSheet({ action, preset, onClose, v }) {
           value={amount}
           onChange={setAmount}
           max={max}
+          price={v.prices?.[sym]}
         />
       )}
 

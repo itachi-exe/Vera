@@ -182,7 +182,7 @@ export default function HomeTab({ v, onAction, setTab, onPanel, unread }) {
                 <em>Collateral</em>
               </span>
               <span className="row-val">
-                <strong>{mask(usd((v.collateral[s] || 0) * ASSETS[s].price))}</strong>
+                <strong>{mask(usd((v.collateral[s] || 0) * (v.prices?.[s] ?? ASSETS[s].price)))}</strong>
                 <em>{mask(qty(v.collateral[s] || 0, ASSETS[s].dp))}</em>
               </span>
             </li>
@@ -212,7 +212,7 @@ export default function HomeTab({ v, onAction, setTab, onPanel, unread }) {
                 </em>
               </span>
               <span className="row-val">
-                <strong>{mask(usd((v.supplied[s] || 0) * ASSETS[s].price))}</strong>
+                <strong>{mask(usd((v.supplied[s] || 0) * (v.prices?.[s] ?? ASSETS[s].price)))}</strong>
                 <em>{mask(qty(v.supplied[s] || 0, ASSETS[s].dp))}</em>
               </span>
             </li>

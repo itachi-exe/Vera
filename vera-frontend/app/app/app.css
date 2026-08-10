@@ -2419,7 +2419,8 @@ button.agent-reg:focus-visible {
 
 .pool-head .sec-h { margin: 0; }
 
-.tag-demo {
+.tag-demo,
+.tag-live {
   flex: none;
   padding: 3px 9px;
   border: 1px solid var(--hairline);
@@ -2429,6 +2430,12 @@ button.agent-reg:focus-visible {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-muted);
+}
+
+/* Reading from the deployed pool, as opposed to failing to. */
+.tag-live {
+  border-color: color-mix(in oklab, var(--accent) 42%, var(--hairline));
+  color: var(--accent);
 }
 
 .pool-grid {

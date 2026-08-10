@@ -11,10 +11,12 @@ const PRESET_LABEL = { 0.25: "25%", 0.5: "50%", 0.75: "75%", 1: "Max" };
  * unit on the left and the available balance right-aligned, quick-fill chips
  * underneath.
  */
-export default function AmountField({ label, symbol, value, onChange, max, dp }) {
+export default function AmountField({ label, symbol, value, onChange, max, dp, price }) {
   const a = ASSETS[symbol];
   const decimals = dp ?? a?.dp ?? 4;
-  const usdValue = (Number(value) || 0) * (a?.price ?? 0);
+  // The oracle's price when the caller has one; the deploy-time constant is the
+  // fallback so the field still quotes a value before /api/pool answers.
+  const usdValue = (Number(value) || 0) * (price ?? a?.price ?? 0);
 
   const set = (n) => onChange(Math.max(0, Math.min(Number(n.toFixed(decimals)), max)));
 

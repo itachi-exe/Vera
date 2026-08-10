@@ -13,13 +13,15 @@ export default function AssetSheet({ sym, onClose, onAction, v }) {
   if (!a) return null;
 
   const isStable = a.kind === "stable";
+  // The pool's own oracle once /api/pool has answered.
+  const price = v.prices?.[sym] ?? a.price;
   const inWallet = v.wallet[sym] || 0;
   const asCollateral = v.collateral[sym] || 0;
   const asSupply = v.supplied[sym] || 0;
   const liq = v.liqPrices?.[sym] ?? null;
 
   const terms = [
-    { k: "Price", v: usd(a.price, a.price < 10 ? 4 : 2) },
+    { k: "Price", v: usd(price, price < 10 ? 4 : 2) },
     { k: "Supply APY", v: pct(isStable ? v.apy : Number((v.apy * 0.42).toFixed(1)), 1) },
     isStable
       ? { k: "Borrow APR", v: pct(v.apr, 1) }

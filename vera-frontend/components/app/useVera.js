@@ -38,48 +38,102 @@ import {
   withdrawableUsd as withdrawableUsdOf,
 } from "@/lib/vera";
 
+/**
+ * The three tokens `Deploy.s.sol` deploys.
+ *
+ * `price` is the deploy-time oracle value, not a market quote: `MockOracle` is
+ * set to exactly these in `Deploy.s.sol`, and `/api/pool` overwrites them with a
+ * live `getPrice` read on load. They are the fallback for the moments before
+ * that lands, so a price on screen is either the oracle's or the constant the
+ * oracle was deployed with — never a third number invented here.
+ *
+ * They were 2504.12 and 64991.4 until 2026-08-09, which appeared nowhere in the
+ * contracts and meant the dashboard valued the same collateral differently from
+ * the pool that holds it.
+ *
+ * `collateral: false` marks a token the pool cannot take. `VeraPool` is
+ * single-collateral by construction — one immutable `collateralToken` — so mWBTC
+ * is priced and held, never deposited.
+ */
 export const ASSETS = {
-  mUSDC: { symbol: "mUSDC", name: "Vera USD", price: 1, dp: 2, kind: "stable" },
-  mETH: { symbol: "mETH", name: "Vera Ether", price: 2504.12, dp: 4, kind: "volatile" },
-  mWBTC: { symbol: "mWBTC", name: "Vera Bitcoin", price: 64991.4, dp: 6, kind: "volatile" },
+  mUSDC: { symbol: "mUSDC", name: "Vera USD", price: 1, dp: 2, kind: "stable", collateral: false },
+  mETH: {
+    symbol: "mETH",
+    name: "Vera Ether",
+    price: 3000,
+    dp: 4,
+    kind: "volatile",
+    collateral: true,
+  },
+  mWBTC: {
+    symbol: "mWBTC",
+    name: "Vera Bitcoin",
+    price: 62000,
+    dp: 6,
+    kind: "volatile",
+    collateral: false,
+  },
 };
 
 /** Faucet grant per mint() call, per asset. */
 export const FAUCET = { mUSDC: 1000, mETH: 0.5, mWBTC: 0.01 };
 
+/**
+ * The demo opening position.
+ *
+ * Demo mode only. These are a worked example so the score, the health factor and
+ * the liquidation price have something to move against; the two sandbox wallets
+ * are real Cleanverse records chosen to compare attestations, and their token
+ * balances were never a chain read.
+ *
+ * A live connected wallet does not use any of this — `seedFromChain` below
+ * replaces all four with what `/api/pool?address=` returns, zeroes included.
+ */
 const INITIAL_WALLET = { mUSDC: 1250, mETH: 0.85, mWBTC: 0.011 };
 const INITIAL_COLLATERAL = { mETH: 0.412, mWBTC: 0.0061, mUSDC: 0 };
 const INITIAL_SUPPLIED = { mUSDC: 1480, mETH: 0, mWBTC: 0 };
 const INITIAL_DEBT = 820;
+const INITIAL_ACTIVITY = [
+  { id: 3, t: "Drew 320 mUSDC at 78% LTV", when: "3d ago", kind: "borrow" },
+  { id: 2, t: "CVI attestation issued", when: "1d ago", kind: "verify" },
+  { id: 1, t: "Supplied 500 mUSDC", when: "2h ago", kind: "supply" },
+];
 
 /** How long the opening 820 of debt has been outstanding, so interest is visible. */
 const DEBT_AGE_MS = 6 * 24 * 60 * 60 * 1000;
 
 /**
- * Rest of the pool, for the pool-wide figures.
+ * Rest of the pool.
  *
- * These are local demo numbers, not chain reads — `VeraPool` is not deployed yet,
- * so there is no `totalSupplied` to call. Everything derived from them is labelled
- * "demo · pre-deploy" in the UI. Once the pool lands, this object is the only thing
- * that gets replaced by a contract read.
+ * Zeroes, not a baseline. The pool is deployed, so `/api/pool` reads
+ * `totalSupplied`, `totalCollateral` and `totalDebt` and these are only what the
+ * figures fall back to while that read is in flight or failing — and a pool-wide
+ * total this wallet cannot see is genuinely zero rather than a guess.
+ *
+ * This object held 412k supplied / 188.5k borrowed / 96.4k collateral until
+ * 2026-08-09, which rendered a 45.8% utilisation for a pool whose real
+ * utilisation is 0%.
  */
-export const POOL_BASE = {
-  /** mUSDC supplied by everyone else. */
-  usdc: 412_000,
-  /** mUSDC everyone else has already drawn. */
-  borrowed: 188_500,
-  /** USD value of collateral posted by everyone else. */
-  collateralUsd: 96_400,
-};
+export const POOL_BASE = { usdc: 0, borrowed: 0, collateralUsd: 0 };
 
-/** Price map, keyed by symbol, for the liquidation-price solver. */
+/**
+ * Fallback price map, keyed by symbol, for the liquidation-price solver.
+ *
+ * The deploy-time constants. `priceMap()` prefers the oracle's live values and
+ * falls back to these, so the solver never runs on a price that came from
+ * neither the chain nor the deployment.
+ */
 export const PRICES = Object.fromEntries(
   Object.entries(ASSETS).map(([sym, a]) => [sym, a.price])
 );
 
+/** Oracle prices when /api/pool has answered, deploy-time constants until then. */
+const priceMap = (chain) =>
+  chain?.ok && chain.prices ? { ...PRICES, ...chain.prices } : PRICES;
+
 const round = (n, dp) => Number(n.toFixed(dp));
-const usdOf = (bag) =>
-  Object.entries(bag).reduce((s, [sym, q]) => s + (q || 0) * ASSETS[sym].price, 0);
+const usdOf = (bag, prices = PRICES) =>
+  Object.entries(bag).reduce((s, [sym, q]) => s + (q || 0) * (prices[sym] ?? 0), 0);
 
 /**
  * The whole app's state. Deliberately one hook so the demo toggle can flip
@@ -106,6 +160,9 @@ export function useVera() {
   const [chainId, setChainId] = useState(null);
   const [walletError, setWalletError] = useState(null);
   const [deployment, setDeployment] = useState(null);
+
+  /** `/api/pool`: live pool totals, oracle prices, and the wallet's own row. */
+  const [chain, setChain] = useState(null);
 
   // Wallets that announced themselves via EIP-6963. Empty is the ordinary case
   // (one legacy wallet, or none) and the connect button behaves as it always has.
@@ -145,11 +202,7 @@ export function useVera() {
     setPrincipal(round(Math.max(0, nextPrincipal), 6));
   }, []);
 
-  const [activity, setActivity] = useState([
-    { id: 3, t: "Drew 320 mUSDC at 78% LTV", when: "3d ago", kind: "borrow" },
-    { id: 2, t: "CVI attestation issued", when: "1d ago", kind: "verify" },
-    { id: 1, t: "Supplied 500 mUSDC", when: "2h ago", kind: "supply" },
-  ]);
+  const [activity, setActivity] = useState(INITIAL_ACTIVITY);
 
   const log = useCallback((t, kind) => {
     setActivity((a) => [{ id: Date.now() + Math.random(), t, when: "just now", kind }, ...a]);
@@ -310,6 +363,68 @@ export function useVera() {
     };
   }, []);
 
+  // What the pool actually holds, plus the oracle's prices. Re-read when the
+  // subject wallet changes so the account block follows the connected address.
+  //
+  // A failure leaves `chain` at { ok: false } and the UI renders the unavailable
+  // branch. It deliberately does not fall back to the last good payload the way
+  // /api/prices does: a stale quote for an unlisted token costs nothing, but a
+  // stale pool total is the exact thing this replaced.
+  useEffect(() => {
+    let cancelled = false;
+    const q = mode === "live" && address ? `?address=${address}` : "";
+    setChain(null);
+    fetch(`/api/pool${q}`, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j) => {
+        if (!cancelled) setChain(j);
+      })
+      .catch(() => {
+        if (!cancelled) setChain({ ok: false, code: "chain-unreachable" });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, address]);
+
+  /**
+   * A connected wallet shows its own holdings, not the demo opening position.
+   *
+   * Balances, collateral, supply and debt all come from `/api/pool?address=`,
+   * so a wallet that holds nothing renders zeroes — which is the true answer and
+   * the one a judge connecting their own wallet will get. Runs once per address:
+   * `seededFor` guards it so the 10s poll cannot overwrite an action the user has
+   * taken since. Leaving live mode restores the demo position.
+   */
+  const seededFor = useRef(null);
+  useEffect(() => {
+    if (mode !== "live") {
+      if (seededFor.current !== null) {
+        seededFor.current = null;
+        setWallet(INITIAL_WALLET);
+        setCollateral(INITIAL_COLLATERAL);
+        setSupplied(INITIAL_SUPPLIED);
+        checkpoint(INITIAL_DEBT);
+        setActivity(INITIAL_ACTIVITY);
+      }
+      return;
+    }
+
+    const acct = chain?.ok ? chain.account : null;
+    if (!acct || acct.address !== address || seededFor.current === address) return;
+
+    seededFor.current = address;
+    const b = acct.balances || {};
+    setWallet({ mUSDC: b.mUSDC || 0, mETH: b.mETH || 0, mWBTC: b.mWBTC || 0 });
+    // Single-collateral pool: `positions().collateral` is mETH by construction.
+    setCollateral({ mETH: acct.position?.collateral || 0, mWBTC: 0, mUSDC: 0 });
+    setSupplied({ mUSDC: acct.supplied || 0, mETH: 0, mWBTC: 0 });
+    checkpoint(acct.position?.debt || 0);
+    // The demo timeline belongs to the demo wallet. This one's history is
+    // whatever it does from here.
+    setActivity([]);
+  }, [mode, address, chain, checkpoint]);
+
   // Re-run CVI + CVA whenever the wallet connects or the demo mode flips.
   //
   // The toggle picks which real wallet to look up — one that holds an A-Pass on
@@ -364,24 +479,35 @@ export function useVera() {
     const accrued = accruedInterest(principal, apr, elapsed);
     const debt = principal + accrued;
 
-    const collateralUsd = usdOf(collateral);
-    const suppliedUsd = usdOf(supplied);
-    const walletUsd = usdOf(wallet);
+    const prices = priceMap(chain);
+    const collateralUsd = usdOf(collateral, prices);
+    const suppliedUsd = usdOf(supplied, prices);
+    const walletUsd = usdOf(wallet, prices);
 
-    // Pool-wide figures. Everything but this wallet's own row is a local demo
-    // baseline — see POOL_BASE. Labelled as such wherever it is shown.
-    const poolSuppliedUsd = POOL_BASE.usdc + suppliedUsd;
-    const poolBorrowedUsd = POOL_BASE.borrowed + debt;
-    const poolCollateralUsd = POOL_BASE.collateralUsd + collateralUsd;
+    // Pool-wide figures, read from the contract. `chainTotals` is null until
+    // /api/pool answers; every consumer treats null as "not known yet" rather
+    // than as zero, so nothing on screen claims a total the chain has not given.
+    const chainTotals = chain?.ok ? chain.totals : null;
+    const poolLive = !!chainTotals;
+
+    // Three states, not two. `chain` is null while the first read is in flight,
+    // and calling that "unavailable" would report a failure that has not
+    // happened — including on the server render, which always precedes it.
+    const poolStatus = poolLive ? "live" : chain === null ? "loading" : "unavailable";
+
+    const poolSuppliedUsd = chainTotals ? chainTotals.suppliedUsd : POOL_BASE.usdc + suppliedUsd;
+    const poolBorrowedUsd = chainTotals ? chainTotals.debtUsd : POOL_BASE.borrowed + debt;
+    const poolCollateralUsd = chainTotals
+      ? chainTotals.collateralUsd
+      : POOL_BASE.collateralUsd + collateralUsd;
     const poolTvlUsd = poolSuppliedUsd + poolCollateralUsd;
     const poolUtilization = utilizationOf(poolBorrowedUsd, poolSuppliedUsd);
 
     // Borrowable mUSDC actually sitting in the pool. `VeraPool.borrow` reverts
     // with InsufficientLiquidity past this, however much credit you have.
-    const liquidityUsd = Math.max(
-      0,
-      POOL_BASE.usdc + (supplied.mUSDC || 0) - POOL_BASE.borrowed - debt
-    );
+    const liquidityUsd = chainTotals
+      ? Math.max(0, chainTotals.suppliedUsd - chainTotals.debtUsd)
+      : Math.max(0, POOL_BASE.usdc + (supplied.mUSDC || 0) - POOL_BASE.borrowed - debt);
 
     const borrowCapacity = collateralUsd * (ltv / 100);
     const projectedDebt = debt + draft;
@@ -391,7 +517,7 @@ export function useVera() {
 
     // Per asset, holding the others at their current prices. The old single-asset
     // form only looked at mETH, which overstated the price mETH had to hold.
-    const liqPrices = liquidationPrices(collateral, PRICES, projectedDebt, liqThreshold);
+    const liqPrices = liquidationPrices(collateral, prices, projectedDebt, liqThreshold);
     const liqPrice = liqPrices.mETH ?? null;
 
     // Collateral you may remove and still pass the contract's check. The pool
@@ -424,6 +550,8 @@ export function useVera() {
       hf,
       liqPrice,
       liqPrices,
+      /** Live oracle prices by symbol; deploy-time constants until /api/pool lands. */
+      prices,
       liquidityUsd,
       pool: {
         suppliedUsd: poolSuppliedUsd,
@@ -432,12 +560,17 @@ export function useVera() {
         tvlUsd: poolTvlUsd,
         liquidityUsd,
         utilization: poolUtilization,
+        // Drives the "live · Monad testnet" / "chain unavailable" label. False
+        // means every figure above is a fallback, and PoolStats says so.
+        live: poolLive,
+        status: poolStatus,
+        address: chain?.pool ?? null,
       },
       closeFactorPct: CLOSE_FACTOR_PCT,
       liquidationBonusPct: LIQUIDATION_BONUS_PCT,
       utilization: borrowCapacity > 0 ? (projectedDebt / borrowCapacity) * 100 : 0,
     };
-  }, [identity, collateral, supplied, wallet, principal, elapsed, draft]);
+  }, [identity, collateral, supplied, wallet, principal, elapsed, draft, chain]);
 
   // The pool cannot pay out more than it holds, however much credit you have.
   const maxDraw = Math.min(
@@ -474,10 +607,13 @@ export function useVera() {
       let collateralUsd = d.collateralUsd;
       let debtUsd = d.debt;
 
+      // The oracle's price, not the deploy-time constant, so a preview values a
+      // deposit exactly as the pool will when it lands.
+      const px = d.prices[sym] ?? 0;
       if (action === "borrow") debtUsd += size;
       else if (action === "repay") debtUsd = Math.max(0, debtUsd - size);
-      else if (action === "deposit") collateralUsd += size * (ASSETS[sym]?.price || 0);
-      else if (action === "withdraw") collateralUsd -= size * (ASSETS[sym]?.price || 0);
+      else if (action === "deposit") collateralUsd += size * px;
+      else if (action === "withdraw") collateralUsd -= size * px;
       else return null;
 
       collateralUsd = Math.max(0, collateralUsd);
@@ -512,12 +648,21 @@ export function useVera() {
       }
       if (action === "withdraw") {
         const held = collateral[sym] || 0;
-        const cap = derived.withdrawableUsd / a.price;
+        const px = derived.prices[sym] ?? 0;
+        const cap = px > 0 ? derived.withdrawableUsd / px : 0;
         return Math.max(0, Math.min(held, cap));
       }
       return 0;
     },
-    [wallet, supplied, collateral, derived.withdrawableUsd, derived.liquidityUsd, derived.debt]
+    [
+      wallet,
+      supplied,
+      collateral,
+      derived.prices,
+      derived.withdrawableUsd,
+      derived.liquidityUsd,
+      derived.debt,
+    ]
   );
 
   /* ---------- actions ---------- */
@@ -562,13 +707,14 @@ export function useVera() {
       if (!(amt > 0)) return fail("ZeroAmount");
       if (amt > (collateral[sym] || 0) + 1e-9)
         return fail("InsufficientCollateral", `You have not deposited that much ${sym}`);
-      if (amt * a.price > derived.withdrawableUsd + 1e-6) return fail("ExceedsLTV");
+      if (amt * (derived.prices[sym] ?? 0) > derived.withdrawableUsd + 1e-6)
+        return fail("ExceedsLTV");
       setCollateral((c) => ({ ...c, [sym]: round((c[sym] || 0) - amt, a.dp) }));
       setWallet((w) => ({ ...w, [sym]: round((w[sym] || 0) + amt, a.dp) }));
       log(`Withdrew ${amt} ${sym} of collateral`, "withdraw");
       return { ok: true };
     },
-    [collateral, derived.withdrawableUsd, log]
+    [collateral, derived.prices, derived.withdrawableUsd, log]
   );
 
   const supply = useCallback(

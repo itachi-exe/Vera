@@ -100,7 +100,7 @@ export default function PositionsTab({ v, onAction }) {
                   <em>{qty(v.collateral[s], ASSETS[s].dp)}</em>
                 </span>
                 <span className="row-val">
-                  <strong>{usd(v.collateral[s] * ASSETS[s].price)}</strong>
+                  <strong>{usd(v.collateral[s] * (v.prices?.[s] ?? ASSETS[s].price))}</strong>
                   <em>{v.ltv}% LTV</em>
                 </span>
               </li>
@@ -129,7 +129,7 @@ export default function PositionsTab({ v, onAction }) {
                   <em>Earning {v.apy}%</em>
                 </span>
                 <span className="row-val">
-                  <strong>{usd(v.supplied[s] * ASSETS[s].price)}</strong>
+                  <strong>{usd(v.supplied[s] * (v.prices?.[s] ?? ASSETS[s].price))}</strong>
                   <em>{qty(v.supplied[s], ASSETS[s].dp)}</em>
                 </span>
               </li>
