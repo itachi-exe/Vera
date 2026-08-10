@@ -7,12 +7,13 @@ const COLS = [
       { t: "How it works", href: "#how" },
       { t: "Trust score", href: "#trust" },
       { t: "Features", href: "#features" },
-      { t: "Open the app", href: "#demo" },
+      { t: "Open the app", href: "/app" },
     ],
   },
   {
     h: "Learn",
     links: [
+      { t: "Documentation", href: "/doc" },
       { t: "What is CVI", href: "#faq" },
       { t: "What is CVA", href: "#faq" },
       { t: "FAQ", href: "#faq" },

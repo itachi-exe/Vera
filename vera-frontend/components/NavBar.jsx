@@ -8,6 +8,7 @@ const LINKS = [
   { href: "#how", label: "How it works" },
   { href: "#trust", label: "Trust score" },
   { href: "#features", label: "Features" },
+  { href: "/doc", label: "Docs" },
   { href: "/app", label: "Try the demo" },
 ];
 

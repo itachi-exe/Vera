@@ -1,0 +1,470 @@
+/* ============================================================
+   Vera — documentation page.
+
+   Built entirely on the tokens in globals.css. Nothing here redefines a
+   colour, a radius or a font: the doc is a different layout of the same
+   design system, not a second one. The only new shapes are the ones a
+   reference page needs and the landing page has no use for — a sticky
+   contents rail, definition tables, and code blocks.
+   ============================================================ */
+
+.doc {
+  /* Clears the fixed 68px nav, then opens the same rhythm as .sec. */
+  padding-top: 132px;
+  padding-bottom: var(--section-y);
+}
+
+/* ---------- masthead ---------- */
+
+.doc-head {
+  max-width: 780px;
+}
+
+.doc-head h1 {
+  margin-top: 18px;
+  font-size: clamp(38px, 6vw, 68px);
+}
+
+.doc-head .lede {
+  margin-top: 22px;
+  max-width: 62ch;
+  font-size: 17.5px;
+}
+
+/* Chain, contract and status facts, stated once at the top. */
+.doc-facts {
+  margin-top: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.doc-fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-pill);
+  background: var(--bg-chip);
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.doc-fact b {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.doc-fact.live b {
+  color: var(--accent);
+}
+
+/* ---------- shell: contents rail + body ---------- */
+
+.doc-shell {
+  margin-top: 64px;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 64px;
+  align-items: start;
+}
+
+.doc-toc {
+  position: sticky;
+  /* Nav height plus breathing room. */
+  top: 100px;
+  display: grid;
+  gap: 2px;
+}
+
+.doc-toc-h {
+  margin-bottom: 12px;
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.doc-toc a {
+  padding: 7px 0 7px 14px;
+  border-left: 1px solid var(--hairline);
+  font-size: 13.5px;
+  color: var(--text-muted);
+  transition: color 0.18s var(--ease), border-color 0.18s var(--ease);
+}
+
+.doc-toc a:hover {
+  color: var(--text);
+  border-left-color: var(--hairline-strong);
+}
+
+.doc-toc a.on {
+  color: var(--accent);
+  border-left-color: var(--accent);
+}
+
+.doc-body {
+  min-width: 0;
+  max-width: 78ch;
+}
+
+/* ---------- sections ---------- */
+
+.doc-sec {
+  /* Anchored headings land below the fixed nav rather than under it. */
+  scroll-margin-top: 92px;
+  padding-top: 58px;
+}
+
+.doc-sec:first-child {
+  padding-top: 0;
+}
+
+.doc-sec + .doc-sec {
+  border-top: 1px solid var(--hairline);
+}
+
+.doc-sec > h2 {
+  font-size: clamp(26px, 3.4vw, 36px);
+}
+
+.doc-sec > h3 {
+  margin-top: 38px;
+  font-size: var(--fs-h3);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.doc-sec p {
+  margin-top: 16px;
+  font-size: 15.5px;
+  line-height: 1.68;
+  color: var(--text-muted);
+}
+
+.doc-sec h2 + p {
+  margin-top: 20px;
+}
+
+.doc-sec strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* In-prose links only. .btn is excluded because its own rules in globals.css
+   already set the right foreground for each variant (on-accent for a filled
+   button, text for a ghost one) -- this rule painted an accent-on-accent
+   button unreadable before the exclusion was added. */
+.doc-sec a:not(.doc-toc a):not(.btn) {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: rgba(108, 192, 156, 0.4);
+}
+
+.doc-sec a:not(.btn):hover {
+  text-decoration-color: var(--accent);
+}
+
+/* ---------- lists ---------- */
+
+.doc-ul {
+  margin-top: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.doc-ul li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.doc-ul li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 10px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.75;
+}
+
+/* ---------- key/value table ---------- */
+
+.doc-table {
+  margin-top: 22px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-card);
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.doc-table > div {
+  display: grid;
+  grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+  gap: 20px;
+  padding: 14px 18px;
+}
+
+.doc-table > div + div {
+  border-top: 1px solid var(--hairline);
+}
+
+.doc-table dt {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.doc-table dd {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* ---------- comparison table ---------- */
+
+.doc-scroll {
+  margin-top: 24px;
+  overflow-x: auto;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-card);
+  background: var(--bg-card);
+}
+
+.doc-grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  min-width: 460px;
+}
+
+.doc-grid-table th,
+.doc-grid-table td {
+  padding: 13px 18px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.doc-grid-table thead th {
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.doc-grid-table tbody tr + tr td {
+  border-top: 1px solid var(--hairline);
+}
+
+.doc-grid-table td:first-child {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.doc-grid-table td {
+  color: var(--text-muted);
+}
+
+.doc-grid-table .good {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.doc-grid-table .flat {
+  color: var(--warn);
+  font-weight: 700;
+}
+
+/* ---------- code ---------- */
+
+.doc-code {
+  margin-top: 20px;
+  padding: 18px 20px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-card);
+  background: #0a0d08;
+  overflow-x: auto;
+}
+
+.doc-code pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--text-muted);
+  white-space: pre;
+}
+
+.doc-code .c {
+  color: var(--text-muted-cool);
+  opacity: 0.75;
+}
+
+.doc-code .k {
+  color: var(--accent);
+}
+
+code.inline {
+  padding: 2px 6px;
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  background: var(--bg-chip);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* ---------- callout ---------- */
+
+.doc-note {
+  margin-top: 24px;
+  padding: 18px 20px;
+  border: 1px solid var(--hairline);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 var(--r-card) var(--r-card) 0;
+  background: var(--bg-cool);
+}
+
+.doc-note h4 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.doc-note p {
+  margin-top: 7px;
+  font-size: 14.5px;
+}
+
+.doc-note.warn {
+  border-left-color: var(--warn);
+}
+
+/* ---------- card grid ---------- */
+
+.doc-cards {
+  margin-top: 26px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(228px, 1fr));
+  gap: 14px;
+}
+
+.doc-card {
+  padding: 20px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-card);
+  background: var(--bg-card);
+}
+
+.doc-card h4 {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.doc-card .doc-card-k {
+  display: block;
+  margin-bottom: 10px;
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted-cool);
+}
+
+.doc-card p {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Addresses are long; let them wrap inside their card rather than scroll. */
+.doc-addr {
+  margin-top: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--accent);
+  word-break: break-all;
+}
+
+/* ---------- footer nav out of the doc ---------- */
+
+.doc-end {
+  margin-top: 68px;
+  padding: 30px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-panel-sm);
+  background: var(--bg-card);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.doc-end h3 {
+  font-size: var(--fs-card-title);
+}
+
+.doc-end p {
+  margin-top: 6px;
+  font-size: 14.5px;
+  color: var(--text-muted);
+  max-width: 46ch;
+}
+
+.doc-end-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 1024px) {
+  .doc {
+    padding-top: 108px;
+  }
+
+  .doc-shell {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    margin-top: 48px;
+  }
+
+  /* The rail is a scrollspy for a long page; on narrow screens the page is
+     short enough to scroll and the rail would only cost a screenful. */
+  .doc-toc {
+    display: none;
+  }
+
+  .doc-body {
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .doc-table > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+  }
+
+  .doc-end {
+    padding: 24px;
+  }
+}
