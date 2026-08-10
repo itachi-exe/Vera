@@ -50,9 +50,16 @@ const CHAIN_ID = Number(process.env.MONAD_CHAIN_ID || 10143);
  * containing nothing — which reads as "no restrictions" and means the opposite.
  * Vera's jurisdiction list stays in apass.js until it can be set explicitly via
  * /validator/set_rule.
+ *
+ * `allowed_group` is empty for the same reason. It defaulted to "oc" because that
+ * was the group on the sandbox A-Pass when this was written; Cleanverse then
+ * re-issued the record with `group: ""`, which turned a filter meant to admit the
+ * demo wallet into one that excludes it. A required group is a real filter, so it
+ * belongs in an explicit env override rather than in a default nobody re-checks
+ * when the upstream record moves.
  */
 const RULE = {
-  allowed_group: process.env.VERA_RULE_GROUP ?? "oc",
+  allowed_group: process.env.VERA_RULE_GROUP ?? "",
   allowed_sub_group: process.env.VERA_RULE_SUB_GROUP ?? "",
   min_tier: Number(process.env.VERA_RULE_MIN_TIER ?? 1),
   min_sub_tier: Number(process.env.VERA_RULE_MIN_SUB_TIER ?? 0),
