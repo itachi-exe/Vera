@@ -199,7 +199,8 @@ export default function VeraTab({ v, onAction }) {
       <p className="fineprint">
         CVI and CVA run live against the Cleanverse sandbox on Monad. Every identity and
         compliance field shown is read from the API response — none are invented. Pool-wide
-        figures are marked where they come from a local baseline instead.
+        figures are read from VeraPool storage and priced by the pool's own oracle; when
+        that read fails they are withheld rather than estimated.
       </p>
 
       </div>
